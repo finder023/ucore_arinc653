@@ -61,3 +61,7 @@ int
 sleep(unsigned int time) {
     return sys_sleep(time);
 }
+
+int get_partition_id(void) {
+    return sys_get_partition_id();
+}

@@ -35,5 +35,7 @@ unsigned int gettime_msec(void);
 void lab6_set_priority(uint32_t priority);
 int sleep(unsigned int time);
 
+int get_partition_id(void);
+
 #endif /* !__USER_LIBS_ULIB_H__ */
 

@@ -85,3 +85,8 @@ int
 sys_sleep(unsigned int time) {
     return syscall(SYS_sleep, time);
 }
+
+
+int sys_get_partition_id(void) {
+    return syscall(SYS_getpartid);
+}

@@ -834,18 +834,87 @@ user_main(void *arg) {
     panic("user_main execve failed.\n");
 }
 
-// init_main - the second kernel thread used to create user_main kernel threads
+#define PARTITION_MAIN_DEF(part_id)                         \
+    static int partition_##part_id (void *arg) {            \
+        KERNEL_EXECVE(part_##part_id);                      \
+        panic("create partition_" #part_id "failed\n");     \
+    }                                                       \
+
+
+
+#define DEF_1_PARTITION         \
+    PARTITION_MAIN_DEF(0)
+
+#define DEF_2_PARTITION         \
+    DEF_1_PARTITION             \
+    PARTITION_MAIN_DEF(1)
+
+#define DEF_3_PARTITION         \
+    DEF_2_PARTITION             \
+    PARTITION_MAIN_DEF(2)
+
+#define DEF_4_PARTITION         \
+    DEF_3_PARTITION             \
+    PARTITION_MAIN_DEF(3)
+
+#define DEF_5_PARTITION         \
+    DEF_4_PARTITION             \
+    PARTITION_MAIN_DEF(4)
+
+#define DEF_6_PARTITION         \
+    DEF_5_PARTITION             \
+    PARTITION_MAIN_DEF(5)
+
+
+#define PARTITION_EXEC(part_id)                                         \
+    int pid_##part_id = kernel_thread(partition_##part_id, NULL, 0);    \
+    if (pid_##part_id <= 0) {                                           \
+        panic("create part_" #part_id " failed.\n");                    \
+    }                                                                   \
+    if (partition_add(pid_##part_id) != 0) {                            \
+        panic("add part_" #part_id " failed.\n");                       \
+    }                                                                   \
+
+
+#define EXEC_1_PARTITION    \
+    PARTITION_EXEC(0)
+
+#define EXEC_2_PARTITION    \
+    EXEC_1_PARTITION        \
+    PARTITION_EXEC(1)
+
+#define EXEC_3_PARTITION    \
+    EXEC_2_PARTITION        \
+    PARTITION_EXEC(2)
+
+#define EXEC_4_PARTITION    \
+    EXEC_3_PARTITION        \
+    PARTITION_EXEC(3)
+
+#define EXEC_5_PARTITION    \
+    EXEC_4_PARTITION        \
+    PARTITION_EXEC(4)
+
+#define EXEC_6_PARTITION    \
+    EXEC_5_PARTITION        \
+    PARTITION_EXEC(5)
+
+
+DEF_6_PARTITION
+
 static int
 init_main(void *arg) {
     size_t nr_free_pages_store = nr_free_pages();
     size_t kernel_allocated_store = kallocated();
 
-    int pid = kernel_thread(user_main, NULL, 0);
-    if (pid <= 0) {
-        panic("create user_main failed.\n");
-    }
- extern void check_sync(void);
-    check_sync();                // check philosopher sync problem
+//    int pid = kernel_thread(partition_0, NULL, 0);
+//    if (pid <= 0) {
+//        panic("create user_main failed.\n");
+//    }
+
+    EXEC_6_PARTITION
+ // extern void check_sync(void);
+    // check_sync();                // check philosopher sync problem
 
     while (do_wait(0, NULL) == 0) {
         schedule();

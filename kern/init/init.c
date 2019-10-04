@@ -12,6 +12,7 @@
 #include <ide.h>
 #include <swap.h>
 #include <proc.h>
+#include <partition.h>
 
 int kern_init(void) __attribute__((noreturn));
 
@@ -38,6 +39,7 @@ kern_init(void) {
 
     vmm_init();                 // init virtual memory management
     sched_init();               // init scheduler
+    partition_init();
     proc_init();                // init process table
     
     ide_init();                 // init ide devices

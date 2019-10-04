@@ -14,5 +14,7 @@ void sys_lab6_set_priority(uint32_t priority);
 
 int sys_sleep(unsigned int time);
 
+int sys_get_partition_id(void);
+
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

@@ -83,6 +83,11 @@ sys_sleep(uint32_t arg[]) {
     return do_sleep(time);
 }
 
+static int sys_get_partition_id(uint32_t arg[]) {
+    partition_t *part = current->part;
+    return part->status.identifier;
+}
+
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -96,6 +101,7 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_gettime]           sys_gettime,
     [SYS_lab6_set_priority] sys_lab6_set_priority,
     [SYS_sleep]             sys_sleep,
+    [SYS_getpartid]         sys_get_partition_id,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

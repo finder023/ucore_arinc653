@@ -1,0 +1,10 @@
+bin/
+obj/
+*~
+*.bak
+*.d
+*.o
+*.org
+.gdb.in
+.qemu.out
+.vscode/

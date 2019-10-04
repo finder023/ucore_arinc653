@@ -20,6 +20,10 @@
 #define SYS_shmem           22
 #define SYS_putc            30
 #define SYS_pgdir           31
+
+// ARINC653
+#define SYS_getpartid       32
+
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255
 
