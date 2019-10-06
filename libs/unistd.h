@@ -23,6 +23,7 @@
 
 // ARINC653
 #define SYS_getpartid       32
+#define SYS_createproc      33
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255

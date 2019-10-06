@@ -125,6 +125,7 @@ alloc_proc(void) {
         proc->cptr = proc->optr = proc->yptr = NULL;
         proc->rq = NULL;
         list_init(&(proc->run_link));
+        list_init(&proc->part_link);
         proc->time_slice = 0;
         proc->lab6_run_pool.left = proc->lab6_run_pool.right = proc->lab6_run_pool.parent = NULL;
         proc->lab6_stride = 0;
@@ -900,7 +901,7 @@ user_main(void *arg) {
     PARTITION_EXEC(5)
 
 
-DEF_6_PARTITION
+DEF_2_PARTITION
 
 static int
 init_main(void *arg) {
@@ -912,7 +913,7 @@ init_main(void *arg) {
 //        panic("create user_main failed.\n");
 //    }
 
-    EXEC_6_PARTITION
+    EXEC_2_PARTITION
  // extern void check_sync(void);
     // check_sync();                // check philosopher sync problem
 
@@ -1006,3 +1007,156 @@ do_sleep(unsigned int time) {
     del_timer(timer);
     return 0;
 }
+
+
+int
+do_mmap(uintptr_t *addr_store, size_t len, uint32_t mmap_flags) {
+    struct mm_struct *mm = current->mm;
+    if (mm == NULL) {
+        panic("kernel thread call mmap!!.\n");
+    }
+
+    // cprintf("do_mmap arg: %u %d.\n", (int)addr_store, len);
+
+    if (addr_store == NULL || len == 0) {
+        return -E_INVAL;
+    }
+
+    int ret = -E_INVAL;
+
+    uintptr_t addr;
+
+    lock_mm(mm);
+//    if (!copy_from_user(mm, &addr, addr_store, sizeof(uintptr_t), 1)) {
+//        goto out_unlock;
+//    }
+    addr = *addr_store;
+    // cprintf("do_mmap copy_from_user pass.\n");
+
+    uintptr_t start = ROUNDDOWN(addr, PGSIZE), end = ROUNDUP(addr + len, PGSIZE);
+    addr = start, len = end - start;
+
+    uint32_t vm_flags = VM_READ;
+    if (mmap_flags & VM_WRITE) vm_flags |= VM_WRITE;
+    if (mmap_flags & VM_STACK) vm_flags |= VM_STACK;
+
+    ret = -E_NO_MEM;
+    if (addr == 0) {
+        if ((addr = get_unmapped_area(mm, len)) == 0) {
+            goto out_unlock;
+        }
+    }
+    if ((ret = mm_map(mm, addr, len, vm_flags, NULL)) == 0) {
+        *addr_store = addr;
+    }
+    cprintf("do_mmap mm_map pass.\n");
+
+out_unlock:
+    unlock_mm(mm);
+    return ret;
+}
+
+int
+do_munmap(uintptr_t addr, size_t len) {
+    struct mm_struct *mm = current->mm;
+    if (mm == NULL) {
+        panic("kernel thread call munmap!!.\n");
+    }
+    if (len == 0) {
+        return -E_INVAL;
+    }
+    int ret;
+    lock_mm(mm);
+    {
+        ret = mm_unmap(mm, addr, len);
+    }
+    unlock_mm(mm);
+    return ret;
+}
+
+// arinc 653 api
+int do_create_process(void *func, int *pid, int stack_size) {
+    struct proc_struct *proc;
+
+    // alloc proc and pid
+    if ((proc = alloc_proc()) == NULL) {
+        cprintf("do_create_process: alloc_proc failed.\n");
+        return 1;
+    }
+    proc->parent = current;
+    proc->part = current->part;
+
+    // set up user and kernel stack
+    uintptr_t stack = 0;
+    int ret;
+
+    if ((ret = do_mmap(&stack, stack_size, VM_WRITE | VM_STACK)) != 0) {
+        cprintf("do_create_process: do_mmap failed.\n");
+        goto bad_proc_alloc;        
+    }
+
+    cprintf("stack_addr: %u.\n", stack);
+    // assert(user_mem_check(current->mm, stack, stack_size, 1));
+
+    if ((ret = setup_kstack(proc)) != 0) {
+        goto bad_user_stack_alloc;
+    }
+
+    proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE) - 1;
+    memset(proc->tf, 0, sizeof(struct trapframe));
+    memset(&proc->context, 0, sizeof(struct context));
+    cprintf("set up user and kernel stack pass.\n");
+
+    // copy thread
+    proc->tf->tf_regs.reg_eax = 0;
+    proc->tf->tf_esp = stack + stack_size;
+    proc->tf->tf_eflags |= FL_IF;
+    proc->tf->tf_cs = USER_CS;
+    proc->tf->tf_ds = USER_DS;
+    proc->tf->tf_es = USER_DS;
+    proc->tf->tf_ss = USER_DS;
+    proc->tf->tf_eip = func;
+
+    proc->context.eip = (uintptr_t)forkret;
+    proc->context.esp = (uintptr_t)(proc->tf);
+
+    cprintf("copy thread pass.\n");
+
+    // set mm
+    struct mm_struct *mm = current->mm;
+    mm_count_inc(mm);
+    proc->mm = mm;
+    proc->cr3 = PADDR(mm->pgdir);
+
+
+    // add proc to runlist
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        proc->pid = get_pid();
+        hash_proc(proc);
+        set_links(proc);
+    }
+    local_intr_restore(intr_flag);
+
+    wakeup_proc(proc);
+
+    // new partition schedule, add to partition set
+    partition_t *part = proc->part;
+    list_add(&part->proc_set, &proc->part_link);
+
+    *pid = proc->pid;
+    ret = 0;
+    return ret;
+
+
+bad_user_stack_alloc:
+    do_munmap(stack, stack_size);
+
+bad_proc_alloc:
+    kfree(proc);
+
+    return ret;
+}
+
+

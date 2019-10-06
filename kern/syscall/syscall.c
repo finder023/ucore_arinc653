@@ -88,6 +88,13 @@ static int sys_get_partition_id(uint32_t arg[]) {
     return part->status.identifier;
 }
 
+static int sys_create_process(uint32_t  arg[]) {
+    void *func = (void*)arg[0];
+    int *pid = (int*)arg[1];
+    int stack_size = (int)arg[2];
+    return do_create_process(func, pid, stack_size);
+}
+
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -102,6 +109,7 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_lab6_set_priority] sys_lab6_set_priority,
     [SYS_sleep]             sys_sleep,
     [SYS_getpartid]         sys_get_partition_id,
+    [SYS_createproc]        sys_create_process,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

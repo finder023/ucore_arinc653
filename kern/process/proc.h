@@ -66,6 +66,7 @@ struct proc_struct {
     uint32_t lab6_stride;                       // FOR LAB6 ONLY: the current stride of the process 
     uint32_t lab6_priority;                     // FOR LAB6 ONLY: the priority of process, set by lab6_set_priority(uint32_t)
     void *part;
+    list_entry_t    part_link;
 };
 
 #define PF_EXITING                  0x00000001      // getting shutdown
@@ -98,5 +99,9 @@ int do_kill(int pid);
 //FOR LAB6, set the process's priority (bigger value will get more CPU time) 
 void lab6_set_priority(uint32_t priority);
 int do_sleep(unsigned int time);
+
+
+int do_create_process(void *func, int *pid, int stack_size);
+
 #endif /* !__KERN_PROCESS_PROC_H__ */
 

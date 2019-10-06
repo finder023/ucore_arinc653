@@ -90,3 +90,7 @@ sys_sleep(unsigned int time) {
 int sys_get_partition_id(void) {
     return syscall(SYS_getpartid);
 }
+
+int sys_create_process(void *func, int *pid, int stack_size) {
+    return syscall(SYS_createproc, func, pid, stack_size);
+} 

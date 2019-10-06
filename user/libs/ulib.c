@@ -65,3 +65,7 @@ sleep(unsigned int time) {
 int get_partition_id(void) {
     return sys_get_partition_id();
 }
+
+int create_process(void *func, int *pid, int stack_size) {
+    return sys_create_process(func, pid, stack_size);
+}

@@ -16,5 +16,7 @@ int sys_sleep(unsigned int time);
 
 int sys_get_partition_id(void);
 
+int sys_create_process(void *func, int *pid, int stack_size);
+
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 
