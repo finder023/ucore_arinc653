@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <default_sched.h>
+#include <arinc_sched.h>
+#include <clock.h>
 
 static list_entry_t timer_list;
 
@@ -45,8 +47,9 @@ void
 sched_init(void) {
     list_init(&timer_list);
 
-    sched_class = &default_sched_class;
-
+    //sched_class = &default_sched_class;
+    sched_class = &arinc_sched_class;
+    
     rq = &__rq;
     rq->max_time_slice = 5;
     sched_class->init(rq);
@@ -56,13 +59,13 @@ sched_init(void) {
 
 void
 wakeup_proc(struct proc_struct *proc) {
-    assert(proc->state != PROC_ZOMBIE);
+    assert(proc_state(proc) != RUNNING);
     bool intr_flag;
     local_intr_save(intr_flag);
     {
-        if (proc->state != PROC_RUNNABLE) {
-            proc->state = PROC_RUNNABLE;
+        if (proc_state(proc) != READY) {
             proc->wait_state = 0;
+            proc_state(proc) = READY; 
             if (proc != current) {
                 sched_class_enqueue(proc);
             }
@@ -81,7 +84,8 @@ schedule(void) {
     local_intr_save(intr_flag);
     {
         current->need_resched = 0;
-        if (current->state == PROC_RUNNABLE) {
+        if (proc_state(current) == RUNNING) {
+            proc_state(current) = READY;
             sched_class_enqueue(current);
         }
         if ((next = sched_class_pick_next()) != NULL) {
@@ -90,7 +94,9 @@ schedule(void) {
         if (next == NULL) {
             next = idleproc;
         }
+        assert(proc_state(next) == READY);
         next->runs ++;
+        proc_state(next) = RUNNING;
         if (next != current) {
             proc_run(next);
         }
@@ -169,4 +175,16 @@ run_timer_list(void) {
         sched_class_proc_tick(current);
     }
     local_intr_restore(intr_flag);
+}
+
+
+void check_deadline(void) {
+    if (sched_class != &arinc_sched_class)
+        return;
+    current->time_slice--;
+    partition_t *part = current->part;
+    if (part->deadline < ticks || part->done)
+        schedule();
+    if (current->pid > 1 && current->time_slice <= 0)
+        schedule();
 }

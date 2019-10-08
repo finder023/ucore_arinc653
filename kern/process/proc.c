@@ -130,6 +130,12 @@ alloc_proc(void) {
         proc->lab6_run_pool.left = proc->lab6_run_pool.right = proc->lab6_run_pool.parent = NULL;
         proc->lab6_stride = 0;
         proc->lab6_priority = 0;
+        proc_state(proc) = DORMANT;
+        proc_timecapa(proc) = 3;
+        proc_baseproi(proc) = 1;
+        proc_prio(proc) = proc_baseproi(proc);
+        proc->part = NULL;
+        proc->time_slice = proc_timecapa(proc);
     }
     return proc;
 }
@@ -402,7 +408,7 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
      *   copy_thread:  setup the trapframe on the  process's kernel stack top and
      *                 setup the kernel entry point and stack of process
      *   hash_proc:    add proc into proc hash_list
-     *   get_pid:      alloc a unique pid for process
+     *   get_pid:      alloc a unique pid fprocor process
      *   wakeup_proc:  set proc->state = PROC_RUNNABLE
      * VARIABLES:
      *   proc_list:    the process set's list
@@ -868,36 +874,40 @@ user_main(void *arg) {
 
 
 #define PARTITION_EXEC(part_id)                                         \
+    int part_##part_id;                                                 \
+    partition_t *part_ptr_##part_id;                                    \
+    if (partition_add(&part_##part_id) == NULL) {                       \
+        panic("add part_" #part_id " failed.\n");                       \
+    }                                                                   \
     int pid_##part_id = kernel_thread(partition_##part_id, NULL, 0);    \
     if (pid_##part_id <= 0) {                                           \
         panic("create part_" #part_id " failed.\n");                    \
     }                                                                   \
-    if (partition_add(pid_##part_id) != 0) {                            \
-        panic("add part_" #part_id " failed.\n");                       \
-    }                                                                   \
+    part_ptr_##part_id = get_partition(part_##part_id)
+
 
 
 #define EXEC_1_PARTITION    \
     PARTITION_EXEC(0)
 
 #define EXEC_2_PARTITION    \
-    EXEC_1_PARTITION        \
+    EXEC_1_PARTITION;       \
     PARTITION_EXEC(1)
 
 #define EXEC_3_PARTITION    \
-    EXEC_2_PARTITION        \
+    EXEC_2_PARTITION;       \
     PARTITION_EXEC(2)
 
 #define EXEC_4_PARTITION    \
-    EXEC_3_PARTITION        \
+    EXEC_3_PARTITION;       \
     PARTITION_EXEC(3)
 
 #define EXEC_5_PARTITION    \
-    EXEC_4_PARTITION        \
+    EXEC_4_PARTITION;       \
     PARTITION_EXEC(4)
 
 #define EXEC_6_PARTITION    \
-    EXEC_5_PARTITION        \
+    EXEC_5_PARTITION;       \
     PARTITION_EXEC(5)
 
 
@@ -913,22 +923,26 @@ init_main(void *arg) {
 //        panic("create user_main failed.\n");
 //    }
 
-    EXEC_2_PARTITION
+    EXEC_2_PARTITION;
  // extern void check_sync(void);
     // check_sync();                // check philosopher sync problem
 
-    while (do_wait(0, NULL) == 0) {
-        schedule();
-    }
+//    while (do_wait(0, NULL) == 0) {
+//        schedule();
+//    }
 
-    cprintf("all user-mode processes have quit.\n");
-    assert(initproc->cptr == NULL && initproc->yptr == NULL && initproc->optr == NULL);
-    assert(nr_process == 2);
-    assert(list_next(&proc_list) == &(initproc->list_link));
-    assert(list_prev(&proc_list) == &(initproc->list_link));
-    assert(nr_free_pages_store == nr_free_pages());
-    assert(kernel_allocated_store == kallocated());
-    cprintf("init check memory pass.\n");
+//    cprintf("all user-mode processes have quit.\n");
+//    assert(initproc->cptr == NULL && initproc->yptr == NULL && initproc->optr == NULL);
+//    assert(nr_process == 2);
+//    assert(list_next(&proc_list) == &(initproc->list_link));
+//    assert(list_prev(&proc_list) == &(initproc->list_link));
+//    assert(nr_free_pages_store == nr_free_pages());
+//    assert(kernel_allocated_store == kallocated());
+//    cprintf("init check memory pass.\n");
+    partition_t *part = current->part;
+    part->done = 1;
+    cprintf("init partition done.\n");
+    while (1);
     return 0;
 }
 
@@ -948,13 +962,22 @@ proc_init(void) {
     }
 
     idleproc->pid = 0;
-    idleproc->state = PROC_RUNNABLE;
+//    idleproc->state = PROC_RUNNABLE;
+    proc_state(idleproc) = RUNNING;
     idleproc->kstack = (uintptr_t)bootstack;
     idleproc->need_resched = 1;
     set_proc_name(idleproc, "idle");
     nr_process ++;
 
     current = idleproc;
+
+    // init partition
+    partition_t *init_part;
+    if ((init_part = partition_add(NULL)) == NULL) {
+        panic("create init partition failed.\n");
+    }
+
+    idleproc->part = init_part;
 
     int pid = kernel_thread(init_main, NULL, 0);
     if (pid <= 0) {
@@ -963,6 +986,9 @@ proc_init(void) {
 
     initproc = find_proc(pid);
     set_proc_name(initproc, "init");
+
+    init_part->idle_proc = initproc;
+    initproc->part = init_part;
 
     assert(idleproc != NULL && idleproc->pid == 0);
     assert(initproc != NULL && initproc->pid == 1);
@@ -1139,12 +1165,13 @@ int do_create_process(void *func, int *pid, int stack_size) {
     }
     local_intr_restore(intr_flag);
 
-    wakeup_proc(proc);
-
     // new partition schedule, add to partition set
     partition_t *part = proc->part;
     list_add(&part->proc_set, &proc->part_link);
+    part->proc_num++;
 
+    wakeup_proc(proc);
+    
     *pid = proc->pid;
     ret = 0;
     return ret;

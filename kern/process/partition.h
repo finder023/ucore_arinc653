@@ -46,12 +46,24 @@ typedef struct {
     struct mm_struct    *mm;
     list_entry_t        part_tag;
     list_entry_t        proc_set;
+    list_entry_t        run_list;
+    system_time_t       deadline;
+    int                 done;
+    int                 proc_num;
     struct proc_struct  *idle_proc;
 } partition_t;
 
+#define le2part(le, member) \
+    to_struct((le), partition_t, member);
 
 void partition_init(void);
 
-int partition_add(int pid);
+partition_t *partition_add(int *pid);
+
+partition_t *next_partition(void);
+
+partition_t *get_partition(int ppid);
+
+
 
 #endif

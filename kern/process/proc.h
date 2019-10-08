@@ -7,7 +7,7 @@
 #include <memlayout.h>
 #include <skew_heap.h>
 #include <partition.h>
-
+#include "arinc_proc.h"
 
 // process's state in his life cycle
 enum proc_state {
@@ -67,7 +67,19 @@ struct proc_struct {
     uint32_t lab6_priority;                     // FOR LAB6 ONLY: the priority of process, set by lab6_set_priority(uint32_t)
     void *part;
     list_entry_t    part_link;
+    // arinc653
+    process_status_t    status;
 };
+
+
+#define proc_timecapa(proc)    ((proc)->status.attributes.time_capacity)
+
+#define proc_state(proc)    ((proc)->status.process_state)
+
+#define proc_prio(proc)     ((proc)->status.current_priority)
+
+#define proc_baseproi(proc) ((proc)->status.attributes.base_priority)
+
 
 #define PF_EXITING                  0x00000001      // getting shutdown
 

@@ -65,6 +65,7 @@ void schedule(void);
 void add_timer(timer_t *timer);
 void del_timer(timer_t *timer);
 void run_timer_list(void);
+void check_deadline(void);
 
 #endif /* !__KERN_SCHEDULE_SCHED_H__ */
 
