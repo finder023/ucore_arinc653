@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <syscall.h>
+#include <arinc_proc.h>
 
 #define MAX_ARGS            5
 
@@ -91,6 +92,6 @@ int sys_get_partition_id(void) {
     return syscall(SYS_getpartid);
 }
 
-int sys_create_process(void *func, int *pid, int stack_size) {
-    return syscall(SYS_createproc, func, pid, stack_size);
+int sys_create_process(process_attribute_t *attr, process_id_t *pid, return_code_t *ret) {
+    return syscall(SYS_createproc, attr, pid, ret);
 } 

@@ -911,7 +911,7 @@ user_main(void *arg) {
     PARTITION_EXEC(5)
 
 
-DEF_2_PARTITION
+DEF_3_PARTITION
 
 static int
 init_main(void *arg) {
@@ -923,7 +923,7 @@ init_main(void *arg) {
 //        panic("create user_main failed.\n");
 //    }
 
-    EXEC_2_PARTITION;
+    EXEC_3_PARTITION;
  // extern void check_sync(void);
     // check_sync();                // check philosopher sync problem
 
@@ -1101,18 +1101,22 @@ do_munmap(uintptr_t addr, size_t len) {
 }
 
 // arinc 653 api
-int do_create_process(void *func, int *pid, int stack_size) {
+int do_create_process(process_attribute_t *attr, int *pid, return_code_t *return_code) {
     struct proc_struct *proc;
 
+    *return_code = NO_ERROR;
     // alloc proc and pid
     if ((proc = alloc_proc()) == NULL) {
         cprintf("do_create_process: alloc_proc failed.\n");
         return 1;
     }
+    proc->status.attributes = *attr;
     proc->parent = current;
     proc->part = current->part;
 
     // set up user and kernel stack
+    int stack_size = attr->stack_size;
+    void *func = attr->entry_point;
     uintptr_t stack = 0;
     int ret;
 

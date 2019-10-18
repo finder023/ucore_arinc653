@@ -1,6 +1,8 @@
 #ifndef __USER_LIBS_SYSCALL_H__
 #define __USER_LIBS_SYSCALL_H__
 
+#include <arinc_proc.h>
+
 int sys_exit(int error_code);
 int sys_fork(void);
 int sys_wait(int pid, int *store);
@@ -16,7 +18,7 @@ int sys_sleep(unsigned int time);
 
 int sys_get_partition_id(void);
 
-int sys_create_process(void *func, int *pid, int stack_size);
+int sys_create_process(process_attribute_t *, process_id_t *pid, return_code_t *return_code);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

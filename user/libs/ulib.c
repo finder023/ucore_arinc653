@@ -2,6 +2,7 @@
 #include <syscall.h>
 #include <stdio.h>
 #include <ulib.h>
+#include <arinc_proc.h>
 
 void
 exit(int error_code) {
@@ -66,6 +67,9 @@ int get_partition_id(void) {
     return sys_get_partition_id();
 }
 
-int create_process(void *func, int *pid, int stack_size) {
-    return sys_create_process(func, pid, stack_size);
+void create_process(process_attribute_t *attributes, 
+                    process_id_t *process_id,   
+                    return_code_t *return_code) {
+
+    return sys_create_process(attributes, process_id, return_code);
 }

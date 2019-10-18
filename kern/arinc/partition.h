@@ -1,7 +1,7 @@
 #ifndef __L_ARINC_PARTITION_H
 #define __L_ARINC_PARTITION_H
 
-#include "../apex.h"
+#include <apex.h>
 #include <proc.h>
 #include <list.h>
 
@@ -14,12 +14,7 @@ typedef enum {
     NORMAL = 3
 } OPERATING_MODE_TYPE;
 
-typedef APEX_INTEGER PARTITION_ID_TYPE;
-typedef APEX_INTEGER    LOCK_LEVEL_TYPE;
 
-
-typedef PARTITION_ID_TYPE   partition_id_t;
-typedef LOCK_LEVEL_TYPE     lock_level_t;
 
 typedef enum {
     NORMAL_START = 0,

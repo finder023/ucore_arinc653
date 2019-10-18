@@ -93,4 +93,11 @@ typedef SYSTEM_TIME_TYPE            system_time_t;
 /* 64-bit signed integer with a 1 nanosecond LSB */
 #define INFINITE_TIME_VALUE -1
 
+typedef APEX_INTEGER PARTITION_ID_TYPE;
+typedef APEX_INTEGER    LOCK_LEVEL_TYPE;
+
+
+typedef PARTITION_ID_TYPE   partition_id_t;
+typedef LOCK_LEVEL_TYPE     lock_level_t;
+
 #endif

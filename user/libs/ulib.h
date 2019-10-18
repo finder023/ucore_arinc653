@@ -37,7 +37,7 @@ int sleep(unsigned int time);
 
 int get_partition_id(void);
 
-int create_process(void *func, int *pid, int stack_size);
+// int create_process(void *func, int *pid, int stack_size);
 
 #endif /* !__USER_LIBS_ULIB_H__ */
 

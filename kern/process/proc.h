@@ -7,7 +7,7 @@
 #include <memlayout.h>
 #include <skew_heap.h>
 #include <partition.h>
-#include "arinc_proc.h"
+#include <arinc_proc.h>
 
 // process's state in his life cycle
 enum proc_state {
@@ -62,9 +62,6 @@ struct proc_struct {
     struct run_queue *rq;                       // running queue contains Process
     list_entry_t run_link;                      // the entry linked in run queue
     int time_slice;                             // time slice for occupying the CPU
-    skew_heap_entry_t lab6_run_pool;            // FOR LAB6 ONLY: the entry in the run pool
-    uint32_t lab6_stride;                       // FOR LAB6 ONLY: the current stride of the process 
-    uint32_t lab6_priority;                     // FOR LAB6 ONLY: the priority of process, set by lab6_set_priority(uint32_t)
     void *part;
     list_entry_t    part_link;
     // arinc653
@@ -113,7 +110,7 @@ void lab6_set_priority(uint32_t priority);
 int do_sleep(unsigned int time);
 
 
-int do_create_process(void *func, int *pid, int stack_size);
+int do_create_process(process_attribute_t *attr, int *pid, return_code_t *return_code);
 
 #endif /* !__KERN_PROCESS_PROC_H__ */
 

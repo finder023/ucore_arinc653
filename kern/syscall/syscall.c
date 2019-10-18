@@ -6,6 +6,7 @@
 #include <pmm.h>
 #include <assert.h>
 #include <clock.h>
+#include <arinc_proc.h>
 
 static int
 sys_exit(uint32_t arg[]) {
@@ -89,10 +90,10 @@ static int sys_get_partition_id(uint32_t arg[]) {
 }
 
 static int sys_create_process(uint32_t  arg[]) {
-    void *func = (void*)arg[0];
+    process_attribute_t *attr = (process_attribute_t*)arg[0];
     int *pid = (int*)arg[1];
-    int stack_size = (int)arg[2];
-    return do_create_process(func, pid, stack_size);
+    return_code_t *ret = (return_code_t*)arg[2];
+    return do_create_process(attr, pid, ret);
 }
 
 static int (*syscalls[])(uint32_t arg[]) = {
