@@ -31,6 +31,12 @@ static partition_t *alloc_partition(void) {
     part->sem_id = 0;
     part->sem_num = 0;
 
+    // event init
+    list_init(&part->all_event);
+    list_init(&part->free_event);
+    part->event_id = 0;
+    part->event_num = 0;
+
     part->mm = NULL;
     part->idle_proc = NULL;
     part->done = 0;

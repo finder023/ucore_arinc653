@@ -204,3 +204,33 @@ void sys_get_semaphore_status (
 {
     syscall(SYS_getsemaphorestatus, semaphore_id, semaphore_status, return_code);
 }
+
+void sys_create_event(event_name_t event_name, event_id_t *event_id, return_code_t *return_code)
+{
+    syscall(SYS_createevent, event_name, event_id, return_code);
+}
+
+void sys_set_event(event_id_t event_id, return_code_t *return_code)
+{
+    syscall(SYS_setevent, event_id, return_code);
+}
+
+void sys_reset_event(event_id_t event_id, return_code_t *return_code)
+{
+    syscall(SYS_resetevent, event_id, return_code);
+}
+
+void sys_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *return_code)
+{
+    syscall(SYS_waitevent, event_id, time_out, return_code);
+}
+
+void sys_get_event_id(event_name_t event_name, event_id_t *event_id, return_code_t *return_code)
+{
+    syscall(SYS_geteventid, event_name, event_id, return_code);
+}
+
+void sys_get_event_status(event_id_t event_id, event_status_t *event_status, return_code_t *return_code)
+{
+    syscall(SYS_geteventstatus, event_id, event_status, return_code);
+}

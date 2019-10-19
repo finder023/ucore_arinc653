@@ -44,6 +44,13 @@
 #define SYS_getsemaphoreid      50
 #define SYS_getsemaphorestatus  51
 
+#define SYS_createevent         52
+#define SYS_setevent            53
+#define SYS_resetevent          54
+#define SYS_waitevent           55
+#define SYS_geteventid          56
+#define SYS_geteventstatus      57
+
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255

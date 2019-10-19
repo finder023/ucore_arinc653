@@ -3,6 +3,7 @@
 
 #include <arinc_proc.h>
 #include <semaphore.h>
+#include <event.h>
 
 int sys_exit(int error_code);
 int sys_fork(void);
@@ -88,6 +89,20 @@ void sys_get_semaphore_status (
     semaphore_status_t  *semaphore_status,
     return_code_t       *return_code
 );
+
+// event
+void sys_create_event(event_name_t event_name, event_id_t *event_id, return_code_t *return_code);
+
+void sys_set_event(event_id_t event_id, return_code_t *return_code);
+
+void sys_reset_event(event_id_t event_id, return_code_t *return_code);
+
+void sys_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *return_code);
+
+void sys_get_event_id(event_name_t event_name, event_id_t *event_id, return_code_t *return_code);
+
+void sys_get_event_status(event_id_t event_id, event_status_t *event_status, return_code_t *return_code);
+
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

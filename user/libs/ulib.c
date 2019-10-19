@@ -4,6 +4,8 @@
 #include <ulib.h>
 #include <arinc_proc.h>
 #include <semaphore.h>
+#include <event.h>
+
 
 void
 exit(int error_code) {
@@ -184,4 +186,34 @@ void get_semaphore_status (
     return_code_t       *return_code)
 {
     sys_get_semaphore_status(semaphore_id, semaphore_status, return_code);
+}
+
+
+void create_event(event_name_t event_name, event_id_t *event_id, return_code_t *return_code)
+{
+    sys_create_event(event_name, event_id, return_code);
+}
+
+void set_event(event_id_t event_id, return_code_t *return_code)
+{
+    sys_set_event(event_id, return_code);
+}
+
+void reset_event(event_id_t event_id, return_code_t *return_code) {
+    sys_reset_event(event_id, return_code);
+}
+
+void wait_event(event_id_t event_id, system_time_t time_out, return_code_t *return_code)
+{
+    sys_wait_event(event_id, time_out, return_code);
+}
+
+void get_event_id(event_name_t event_name, event_id_t *event_id, return_code_t *return_code)
+{
+    sys_get_event_id(event_name, event_id, return_code);
+}
+
+void get_event_status(event_id_t event_id, event_status_t *event_status, return_code_t *return_code)
+{
+    sys_get_event_status(event_id, event_status, return_code);
 }

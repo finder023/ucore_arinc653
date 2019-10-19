@@ -54,6 +54,13 @@ typedef struct partition_type {
     list_entry_t        free_sem;
     int                 sem_id;
     int                 sem_num;
+
+    // event
+    list_entry_t        all_event;
+    list_entry_t        free_event;
+    int                 event_id;
+    int                 event_num;
+
 } partition_t;
 
 #define le2part(le, member) \

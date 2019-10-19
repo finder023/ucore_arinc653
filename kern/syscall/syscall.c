@@ -9,6 +9,7 @@
 #include <arinc_proc.h>
 #include <string.h>
 #include <semaphore.h>
+#include <event.h>
 
 static int
 sys_exit(uint32_t arg[]) {
@@ -241,6 +242,58 @@ static int sys_get_semaphore_status (uint32_t arg[]) {
     return *return_code;
 }
 
+// event
+
+static int sys_create_event(uint32_t arg[]) {
+    event_name_t event_name;
+    strcpy(event_name, (char*)arg[0]);
+    event_id_t *event_id = (event_id_t*)arg[1]; 
+    return_code_t *return_code = (return_code_t*)arg[2];
+    do_create_event(event_name, event_id, return_code);
+    return *return_code;
+}
+
+static int sys_set_event(uint32_t arg[])
+{
+    event_id_t event_id = (event_id_t)arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+    do_set_event(event_id, return_code);
+    return *return_code;
+}
+
+static int sys_reset_event(uint32_t arg[]) {
+    event_id_t event_id = (event_id_t)arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+    do_reset_event(event_id, return_code);
+    return *return_code;
+}
+
+static int sys_wait_event(uint32_t arg[]) {
+    event_id_t event_id = (event_id_t)arg[0];
+    system_time_t time_out = (system_time_t)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[2];
+    do_wait_event(event_id, time_out, return_code);
+    return *return_code;
+}
+
+static int sys_get_event_id(uint32_t arg[]) {
+    event_name_t event_name;
+    strcpy(event_name, (char*)arg[0]);
+    event_id_t *event_id = (event_id_t*)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[2];
+    do_get_event_id(event_name, event_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_event_status(uint32_t arg[]) {
+    event_id_t event_id = (event_id_t)arg[0];
+    event_status_t *event_status = (event_status_t*)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[2];
+    do_get_event_status(event_id, event_status, return_code);
+    return *return_code;
+}
+
+
 
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
@@ -275,6 +328,12 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_signalsemaphore]       sys_signal_semaphore,
     [SYS_getsemaphoreid]        sys_get_semaphore_id,
     [SYS_getsemaphorestatus]    sys_get_semaphore_status,
+    [SYS_createevent]           sys_create_event,
+    [SYS_setevent]              sys_set_event,
+    [SYS_resetevent]            sys_reset_event,
+    [SYS_waitevent]             sys_wait_event,
+    [SYS_geteventid]            sys_get_event_id,
+    [SYS_geteventstatus]        sys_get_event_status,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))
