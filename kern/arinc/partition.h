@@ -42,6 +42,8 @@ typedef struct {
     list_entry_t        part_tag;
     list_entry_t        proc_set;
     list_entry_t        run_list;
+    list_entry_t        dormant_set;
+    list_entry_t        timeout_set;
     system_time_t       deadline;
     int                 done;
     int                 proc_num;
@@ -58,6 +60,8 @@ partition_t *partition_add(int *pid);
 partition_t *next_partition(void);
 
 partition_t *get_partition(int ppid);
+
+void check_timeout(partition_t *part);
 
 
 

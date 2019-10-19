@@ -64,6 +64,9 @@ struct proc_struct {
     int time_slice;                             // time slice for occupying the CPU
     void *part;
     list_entry_t    part_link;
+    list_entry_t    state_link;
+    int             timeout_deadline;
+    void            *timer;
     // arinc653
     process_status_t    status;
 };
@@ -79,11 +82,15 @@ struct proc_struct {
 
 
 #define PF_EXITING                  0x00000001      // getting shutdown
+#define WT_INTERRUPTED      0x80000000
+#define WT_CHILD            (0x20 | WT_INTERRUPTED)
 
-#define WT_INTERRUPTED               0x80000000                    // the wait state could be interrupted
-#define WT_CHILD                    (0x00000001 | WT_INTERRUPTED)  // wait child process
-#define WT_KSEM                      0x00000100                    // wait kernel semaphore
-#define WT_TIMER                    (0x00000002 | WT_INTERRUPTED)  // wait timer
+
+#define WT_KSEM             0x1     // wait kernel semaphore
+#define WT_TIMER            0x2     // wait timer
+#define WT_SUSPEND          0x4     // wait suspend
+#define WT_EVENT            0x8     // wait event
+#define WT_SUSPEND_TIMER    0x10    // suspend self with timeout
 
 #define le2proc(le, member)         \
     to_struct((le), struct proc_struct, member)
@@ -110,7 +117,6 @@ void lab6_set_priority(uint32_t priority);
 int do_sleep(unsigned int time);
 
 
-int do_create_process(process_attribute_t *attr, int *pid, return_code_t *return_code);
 
 #endif /* !__KERN_PROCESS_PROC_H__ */
 

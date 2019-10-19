@@ -100,4 +100,6 @@ typedef APEX_INTEGER    LOCK_LEVEL_TYPE;
 typedef PARTITION_ID_TYPE   partition_id_t;
 typedef LOCK_LEVEL_TYPE     lock_level_t;
 
+#define MAX_TIME_OUT    1000
+
 #endif

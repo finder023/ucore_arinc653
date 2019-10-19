@@ -2,6 +2,8 @@
 #include <kmalloc.h>
 #include <string.h>
 #include <assert.h>
+#include <clock.h>
+#include <sync.h>
 
 static list_entry_t partition_set;
 
@@ -20,6 +22,8 @@ static partition_t *alloc_partition(void) {
     list_init(&part->part_tag);
     list_init(&part->proc_set);
     list_init(&part->run_list);
+    list_init(&part->dormant_set);
+    list_init(&part->timeout_set);
 
     part->mm = NULL;
     part->idle_proc = NULL;
@@ -80,4 +84,31 @@ partition_t *get_partition(int ppid) {
 
 void partition_init(void) {
     list_init(&partition_set);
+}
+
+
+void check_timeout(partition_t *part) {
+    assert(part);
+
+    list_entry_t *le = part->timeout_set.next;
+    struct proc_struct *proc;
+    bool intr_state;
+
+    while (le != &part->timeout_set) {
+        proc = le2proc(le, state_link);
+        if (proc->timeout_deadline < ticks) {
+            local_intr_save(intr_state);
+            {
+                list_del(le);
+                list_add_after(&part->run_list, le);
+                proc->wait_state &= ~WT_TIMER;
+                if (proc->wait_state & WT_SUSPEND_TIMER) {
+                    proc->wait_state &= ~WT_SUSPEND_TIMER;
+                    proc->wait_state &= ~WT_SUSPEND;
+                }
+            }
+            local_intr_restore(intr_state);
+       }
+        le = le->next;
+    }
 }

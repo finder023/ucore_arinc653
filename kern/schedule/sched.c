@@ -4,7 +4,6 @@
 #include <sched.h>
 #include <stdio.h>
 #include <assert.h>
-#include <default_sched.h>
 #include <arinc_sched.h>
 #include <clock.h>
 
@@ -84,10 +83,28 @@ schedule(void) {
     local_intr_save(intr_flag);
     {
         current->need_resched = 0;
-        if (proc_state(current) == RUNNING) {
+        // proc time slice end;
+        if (proc_state(current) == RUNNING && current->time_slice <=0 ) {
             proc_state(current) = READY;
             sched_class_enqueue(current);
         }
+        
+        // larger prio in
+        if (proc_state(current) == RUNNING) {
+            if ((next = sched_class_pick_next()) != NULL) {
+                if (proc_prio(next) <= proc_prio(current))
+                    return;
+                proc_state(current) = READY;
+                sched_class_enqueue(current);
+            }
+        }
+
+        // stop 
+        if (proc_state(current) == DORMANT) {
+            sched_class_dequeue(current);
+        }
+
+        // proc state is waitting, do not need to enqueue
         if ((next = sched_class_pick_next()) != NULL) {
             sched_class_dequeue(next);
         }

@@ -22,8 +22,21 @@
 #define SYS_pgdir           31
 
 // ARINC653
-#define SYS_getpartid       32
-#define SYS_createproc      33
+#define SYS_getpartid           32
+#define SYS_createproc          33
+#define SYS_set_priority        34
+#define SYS_suspendself         35
+#define SYS_suspend             36
+#define SYS_resume              37
+#define SYS_stopself            38
+#define SYS_stop                39
+#define SYS_start               40
+#define SYS_delayedstart        41
+#define SYS_lockpreemption      42
+#define SYS_unlockpreemption    43
+#define SYS_getmyid             44
+#define SYS_getprocessid        45
+#define SYS_getprocessstatus    46
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255

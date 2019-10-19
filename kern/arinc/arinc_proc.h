@@ -12,6 +12,12 @@
 
 #define MAX_PRIORITY_VALUE 239
 
+#define MAX_STACK_SIZE  (4096 * 20)
+
+#define MAX_PROC_PEROID 1000
+
+#define MAX_TIME_CAPA 1000
+
 #define MAX_LOCK_LEVEL 16
 
 typedef enum {
@@ -69,44 +75,46 @@ typedef struct {
 
 typedef process_status_type process_status_t;
 
+extern int arinc_lock_level;
 
+#define PREEMPTION (!((partition_t*)current->part)->status.lock_level) 
 
-void create_process(struct process_attribute_t *attributes, 
+void do_create_process(process_attribute_t *attributes, 
                     process_id_t *process_id,   
                     return_code_t *return_code);
 
-void set_priority(process_id_t process_id,
+void do_set_priority(process_id_t process_id,
                     uint8_t priority,
                     return_code_t *return_code);
 
-void suspend_self(uint32_t time_out,
+void do_suspend_self(uint32_t time_out,
                     return_code_t *return_code);
             
-void suspend(process_id_t process_id, return_code_t *return_code);
+void do_suspend(process_id_t process_id, return_code_t *return_code);
 
-void resume(process_id_t process_id, return_code_t *return_code);
+void do_resume(process_id_t process_id, return_code_t *return_code);
 
-void stop_self(void);
+void do_stop_self(void);
 
-void stop(process_id_t process_id, return_code_t *return_code);
+void do_stop(process_id_t process_id, return_code_t *return_code);
 
-void start(process_id_t process_id, return_code_t *return_code);
+void do_start(process_id_t process_id, return_code_t *return_code);
 
-void delayed_start(process_id_t process_id,
+void do_delayed_start(process_id_t process_id,
                     system_time_t delay_time,
                     return_code_t *return_code);
 
-void lock_preemption(lock_level_t *lock_level, return_code_t *return_code);
+void do_lock_preemption(lock_level_t *lock_level, return_code_t *return_code);
 
-void unlock_preemption(lock_level_t *lock_level, return_code_t *return_code);
+void do_unlock_preemption(lock_level_t *lock_level, return_code_t *return_code);
 
-void get_my_id(process_id_t *process_id, return_code_t *return_code);
+void do_get_my_id(process_id_t *process_id, return_code_t *return_code);
 
-void get_process_id(process_name_t  process_name,
+void do_get_process_id(process_name_t  process_name,
                     process_id_t    *process_id,
                     return_code_t   *return_code);
 
-void get_process_status(process_id_t process_id,
+void do_get_process_status(process_id_t process_id,
                     process_status_t    *process_status,
                     return_code_t       *return_code);
 
