@@ -25,6 +25,12 @@ static partition_t *alloc_partition(void) {
     list_init(&part->dormant_set);
     list_init(&part->timeout_set);
 
+    // semaphore list
+    list_init(&part->all_sem);
+    list_init(&part->free_sem);
+    part->sem_id = 0;
+    part->sem_num = 0;
+
     part->mm = NULL;
     part->idle_proc = NULL;
     part->done = 0;

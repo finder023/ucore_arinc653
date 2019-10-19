@@ -8,6 +8,7 @@
 #include <clock.h>
 #include <arinc_proc.h>
 #include <string.h>
+#include <semaphore.h>
 
 static int
 sys_exit(uint32_t arg[]) {
@@ -195,6 +196,51 @@ static int sys_get_process_status(uint32_t arg[]) {
 }
 
 
+static int sys_create_semphore (uint32_t arg[]) {
+    semaphore_name_t     semaphore_name; 
+    strcpy(semaphore_name, (char*)arg[0]);
+    semaphore_value_t    current_value = arg[1];
+    semaphore_value_t    max_value = arg[2];
+    queuing_discipline_t queuing_discipline = (queuing_discipline_t)arg[3];
+    semaphore_id_t       *semaphore_id = (semaphore_id_t*)arg[4];
+    return_code_t        return_code;
+    do_create_semaphore(semaphore_name, current_value, max_value,
+        queuing_discipline, semaphore_id, &return_code);
+    return return_code;
+}
+
+static int sys_wait_semaphore ( uint32_t arg[]) {
+    semaphore_id_t  semaphore_id = arg[0];
+    system_time_t   time_out = arg[1];
+    return_code_t   *return_code = (return_code_t*)arg[2];
+    do_wait_semaphore(semaphore_id, time_out, return_code);
+    return *return_code;
+}
+
+static int sys_signal_semaphore(uint32_t arg[]) {
+    semaphore_id_t  semaphore_id = arg[0];
+    return_code_t   *return_code = (return_code_t*)arg[2];
+    do_signal_semaphore(semaphore_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_semaphore_id (uint32_t arg[]) {
+    semaphore_name_t    semaphore_name;
+    strcpy(semaphore_name, (char*)arg[0]);
+    semaphore_id_t      *semaphore_id = (semaphore_id_t*)arg[1];
+    return_code_t       *return_code = (return_code_t*)arg[2];
+    do_get_semaphore_id(semaphore_name, semaphore_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_semaphore_status (uint32_t arg[]) {
+    semaphore_id_t      semaphore_id = arg[0];
+    semaphore_status_t  *semaphore_status = (semaphore_status_t*)arg[1];
+    return_code_t       *return_code = (return_code_t*)arg[2];
+    do_get_semaphore_status(semaphore_id, semaphore_status, return_code);
+    return *return_code;
+}
+
 
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
@@ -207,23 +253,28 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_putc]              sys_putc,
     [SYS_pgdir]             sys_pgdir,
     [SYS_gettime]           sys_gettime,
-//    [SYS_lab6_set_priority] sys_lab6_set_priority,
     [SYS_sleep]             sys_sleep,
-    [SYS_getpartid]         sys_get_partition_id,
-    [SYS_createproc]        sys_create_process,
-    [SYS_set_priority]      sys_set_priority,
-    [SYS_suspendself]       sys_suspend_self,
-    [SYS_suspend]           sys_suspend,
-    [SYS_resume]            sys_resume,
-    [SYS_stopself]          sys_stop_self,
-    [SYS_stop]              sys_stop,
-    [SYS_start]             sys_start,
-    [SYS_delayedstart]      sys_delayed_start,
-    [SYS_lockpreemption]    sys_lock_preemption,
-    [SYS_unlockpreemption]  sys_unlock_preemption,
-    [SYS_getmyid]           sys_get_my_id,
-    [SYS_getprocessid]      sys_get_process_id,
-    [SYS_getprocessstatus]  sys_get_process_status,
+    
+    [SYS_getpartid]             sys_get_partition_id,
+    [SYS_createproc]            sys_create_process,
+    [SYS_set_priority]          sys_set_priority,
+    [SYS_suspendself]           sys_suspend_self,
+    [SYS_suspend]               sys_suspend,
+    [SYS_resume]                sys_resume,
+    [SYS_stopself]              sys_stop_self,
+    [SYS_stop]                  sys_stop,
+    [SYS_start]                 sys_start,
+    [SYS_delayedstart]          sys_delayed_start,
+    [SYS_lockpreemption]        sys_lock_preemption,
+    [SYS_unlockpreemption]      sys_unlock_preemption,
+    [SYS_getmyid]               sys_get_my_id,
+    [SYS_getprocessid]          sys_get_process_id,
+    [SYS_getprocessstatus]      sys_get_process_status,
+    [SYS_createsemaphore]       sys_create_semphore,
+    [SYS_waitsemaphore]         sys_wait_semaphore,
+    [SYS_signalsemaphore]       sys_signal_semaphore,
+    [SYS_getsemaphoreid]        sys_get_semaphore_id,
+    [SYS_getsemaphorestatus]    sys_get_semaphore_status,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

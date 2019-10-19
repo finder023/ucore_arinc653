@@ -183,6 +183,9 @@ run_timer_list(void) {
                 }
                 wakeup_proc(proc);
                 del_timer(timer);
+                // wt
+                proc->wait_state &= ~WT_TIMER;
+                proc->timer = NULL;
                 if (le == &timer_list) {
                     break;
                 }

@@ -41,6 +41,8 @@ struct context {
 
 extern list_entry_t proc_list;
 
+struct partition_type;
+
 struct proc_struct {
     enum proc_state state;                      // Process state
     int pid;                                    // Process ID
@@ -62,7 +64,7 @@ struct proc_struct {
     struct run_queue *rq;                       // running queue contains Process
     list_entry_t run_link;                      // the entry linked in run queue
     int time_slice;                             // time slice for occupying the CPU
-    void *part;
+    struct partition_type *part;
     list_entry_t    part_link;
     list_entry_t    state_link;
     int             timeout_deadline;

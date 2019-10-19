@@ -36,7 +36,7 @@ typedef START_CONDITION_TYPE    start_condition_t;
 
 typedef PARTITION_STATUS_TYPE   partition_status_t;
 
-typedef struct {
+typedef struct partition_type {
     partition_status_t  status;
     struct mm_struct    *mm;
     list_entry_t        part_tag;
@@ -48,6 +48,12 @@ typedef struct {
     int                 done;
     int                 proc_num;
     struct proc_struct  *idle_proc;
+
+    // semaphore
+    list_entry_t        all_sem;
+    list_entry_t        free_sem;
+    int                 sem_id;
+    int                 sem_num;
 } partition_t;
 
 #define le2part(le, member) \

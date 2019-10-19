@@ -38,6 +38,13 @@
 #define SYS_getprocessid        45
 #define SYS_getprocessstatus    46
 
+#define SYS_createsemaphore     47
+#define SYS_waitsemaphore       48
+#define SYS_signalsemaphore     49
+#define SYS_getsemaphoreid      50
+#define SYS_getsemaphorestatus  51
+
+
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255
 
