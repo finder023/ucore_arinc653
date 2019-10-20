@@ -242,3 +242,19 @@ void sys_get_partition_status(partition_status_t *status, return_code_t *return_
 void sys_set_partition_mode(operating_mode_t mode, return_code_t *return_code) {
     syscall(SYS_setpartitionstatus, mode, return_code);
 }
+
+void sys_time_wait(system_time_t delay_time, return_code_t *return_code) {
+    syscall(SYS_timewait, delay_time, return_code);
+}
+
+void sys_periodic_wait(return_code_t *return_code) {
+    syscall(SYS_periodicwait, return_code);
+}
+
+void sys_get_time(system_time_t *system_time, return_code_t *return_code) {
+    syscall(SYS_arincgettime, system_time, return_code);
+}
+
+void sys_replenish(system_time_t budget_time, return_code_t *return_code) {
+    syscall(SYS_replenish, budget_time, return_code);
+}

@@ -10,6 +10,7 @@
 #include <string.h>
 #include <semaphore.h>
 #include <event.h>
+#include <arinc_time.h>
 
 static int
 sys_exit(uint32_t arg[]) {
@@ -308,6 +309,29 @@ static int sys_set_partition_mode(uint32_t arg[]) {
     return *return_code;
 }
 
+static int sys_time_wait(uint32_t arg[]) {
+    system_time_t delay_time = arg[0];
+    return_code_t *return_code = (return_code_t *)arg[1];
+    do_time_wait(delay_time, return_code);
+}
+
+static int sys_periodic_wait(uint32_t arg[]) {
+    return_code_t *return_code = (return_code_t*)arg[0];
+    do_periodic_wait(return_code);
+}
+
+static int sys_get_time(uint32_t arg[]) {
+    system_time_t *system_time = arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+    do_get_time(system_time, return_code);
+}
+
+static int sys_replenish(uint32_t arg[]) {
+    system_time_t budget_time = arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+    do_replenish(budget_time, return_code);
+} 
+
 
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
@@ -350,6 +374,10 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_geteventstatus]        sys_get_event_status,
     [SYS_getpartitionstatus]    sys_get_partition_status,
     [SYS_setpartitionstatus]    sys_set_partition_mode,
+    [SYS_timewait]              sys_time_wait,
+    [SYS_periodicwait]          sys_periodic_wait,
+    [SYS_arincgettime]          sys_get_time,
+    [SYS_replenish]             sys_replenish,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

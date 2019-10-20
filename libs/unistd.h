@@ -55,6 +55,12 @@
 #define SYS_getpartitionstatus  58
 #define SYS_setpartitionstatus  59
 
+// time
+#define SYS_timewait            60
+#define SYS_periodicwait        61
+#define SYS_arincgettime        62
+#define SYS_replenish           63
+
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255

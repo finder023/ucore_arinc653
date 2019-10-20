@@ -104,9 +104,19 @@ void sys_get_event_id(event_name_t event_name, event_id_t *event_id, return_code
 
 void sys_get_event_status(event_id_t event_id, event_status_t *event_status, return_code_t *return_code);
 
+// partition
 void sys_get_partition_status(partition_status_t *status, return_code_t *return_code);
 
 void sys_set_partition_mode(operating_mode_t mode, return_code_t *return_code);
+
+// time
+void sys_time_wait(system_time_t delay_time, return_code_t *return_code);
+
+void sys_periodic_wait(return_code_t *return_code);
+
+void sys_get_time(system_time_t *system_time, return_code_t *return_code);
+
+void sys_replenish(system_time_t budget_time, return_code_t *return_code);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

@@ -5,7 +5,7 @@
 #include <arinc_proc.h>
 #include <semaphore.h>
 #include <event.h>
-
+#include <arinc_time.h>
 
 void
 exit(int error_code) {
@@ -224,4 +224,20 @@ void get_partition_status(partition_status_t *status, return_code_t *return_code
 
 void set_partition_mode(operating_mode_t mode, return_code_t *return_code) {
     sys_set_partition_mode(mode, return_code);
+}
+
+void time_wait(system_time_t delay_time, return_code_t *return_code) {
+    sys_time_wait(delay_time, return_code);
+}
+
+void periodic_wait(return_code_t *return_code) {
+    sys_periodic_wait(return_code);
+}
+
+void get_time(system_time_t *system_time, return_code_t *return_code) {
+    sys_get_time(system_time, return_code);
+}
+
+void replenish(system_time_t budget_time, return_code_t *return_code) {
+    sys_replenish(budget_time, return_code);
 }
