@@ -62,15 +62,10 @@ wakeup_proc(struct proc_struct *proc) {
     bool intr_flag;
     local_intr_save(intr_flag);
     {
-        if (proc_state(proc) != READY) {
-            proc->wait_state = 0;
-            proc_state(proc) = READY; 
-            if (proc != current) {
-                sched_class_enqueue(proc);
-            }
-        }
-        else {
-            warn("wakeup runnable process.\n");
+        proc->wait_state = 0;
+        proc_state(proc) = READY; 
+        if (proc != current) {
+            sched_class_enqueue(proc);
         }
     }
     local_intr_restore(intr_flag);
@@ -176,15 +171,14 @@ run_timer_list(void) {
                 le = list_next(le);
                 struct proc_struct *proc = timer->proc;
                 if (proc->wait_state != 0) {
-                    assert(proc->wait_state & WT_INTERRUPTED);
+                    assert(proc->wait_state & WT_TIMER);
                 }
                 else {
                     warn("process %d's wait_state == 0.\n", proc->pid);
                 }
+                // clear wt flag
                 wakeup_proc(proc);
                 del_timer(timer);
-                // wt
-                proc->wait_state &= ~WT_TIMER;
                 proc->timer = NULL;
                 if (le == &timer_list) {
                     break;
@@ -192,7 +186,7 @@ run_timer_list(void) {
                 timer = le2timer(le, timer_link);
             }
         }
-        sched_class_proc_tick(current);
+        // sched_class_proc_tick(current);
     }
     local_intr_restore(intr_flag);
 }
@@ -203,7 +197,7 @@ void check_deadline(void) {
         return;
     current->time_slice--;
     partition_t *part = current->part;
-    if (part->deadline < ticks || part->done)
+    if (part->deadline < ticks || !part->scheduling)
         schedule();
     if (current->pid > 1 && current->time_slice <= 0)
         schedule();

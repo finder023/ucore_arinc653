@@ -294,6 +294,20 @@ static int sys_get_event_status(uint32_t arg[]) {
 }
 
 
+static int sys_get_partition_status(uint32_t arg[]) {
+    partition_status_t *status = (partition_status_t*)arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+    do_get_partition_status(status, return_code);
+    return *return_code;
+}
+
+static int sys_set_partition_mode(uint32_t arg[]) {
+    operating_mode_t mode = (operating_mode_t)arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+    do_set_partition_mode(mode, return_code);
+    return *return_code;
+}
+
 
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
@@ -334,6 +348,8 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_waitevent]             sys_wait_event,
     [SYS_geteventid]            sys_get_event_id,
     [SYS_geteventstatus]        sys_get_event_status,
+    [SYS_getpartitionstatus]    sys_get_partition_status,
+    [SYS_setpartitionstatus]    sys_set_partition_mode,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

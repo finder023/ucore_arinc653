@@ -51,6 +51,10 @@
 #define SYS_geteventid          56
 #define SYS_geteventstatus      57
 
+// partition
+#define SYS_getpartitionstatus  58
+#define SYS_setpartitionstatus  59
+
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255

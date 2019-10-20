@@ -59,7 +59,6 @@ SYS_kill        : kill process                            -->do_kill-->proc->fla
 SYS_getpid      : get the process's pid
 
 */
-
 // the process set's list
 list_entry_t proc_list;
 
@@ -139,6 +138,7 @@ alloc_proc(void) {
         proc->part = NULL;
         proc->time_slice = proc_timecapa(proc);
         proc->timer = NULL;
+        proc->ustack = 0;
     }
     return proc;
 }
@@ -941,7 +941,8 @@ init_main(void *arg) {
 //    assert(kernel_allocated_store == kallocated());
 //    cprintf("init check memory pass.\n");
     partition_t *part = current->part;
-    part->done = 1;
+    part->scheduling = 0;
+    part->status.operating_mode = NORMAL;
     cprintf("init partition done.\n");
     while (1);
     return 0;
@@ -979,6 +980,7 @@ proc_init(void) {
     }
 
     idleproc->part = init_part;
+    init_part->scheduling = 1;
 
     int pid = kernel_thread(init_main, NULL, 0);
     if (pid <= 0) {
@@ -1122,36 +1124,82 @@ static struct proc_struct *find_proc_name(const char *name) {
     return NULL;
 }
 
-static uintptr_t alloc_proc_stack(int stack_size) {
-    uintptr_t stack = 0;
-    if (do_mmap(&stack, stack_size, VM_WRITE | VM_STACK) != 0) {
+
+static int setup_ustack(struct proc_struct *proc) {
+    proc->ustack = 0;
+    if (do_mmap(&proc->ustack, proc->status.attributes.stack_size, VM_WRITE | VM_STACK) != 0) {
         warn("do_create_process: do_mmap failed.\n");
-        return 0;
+        return 1;
     }
-    return stack;
+    return 0;
 }
 
-static void proc_add_timeout(struct proc_struct *proc, int timeout) {
-    partition_t *part = proc->part;
-    if (proc->wait_state & WT_TIMER && proc->timeout_deadline < ticks + timeout) {
-        proc->timeout_deadline = ticks + timeout;
-        return;
-    }
-
-    proc->status.process_state = WAITTING;
-    if (proc->wait_state == 0 || proc->wait_state & WT_SUSPEND_TIMER) {
-        list_del(&proc->state_link);
-        list_add_after(&part->timeout_set, &proc->state_link);
-    }
-    proc->wait_state |= WT_TIMER;
-}
+//  static void proc_add_timeout(struct proc_struct *proc, int timeout) {
+//      partition_t *part = proc->part;
+//      if (proc->wait_state & WT_TIMER && proc->timeout_deadline < ticks + timeout) {
+//          proc->timeout_deadline = ticks + timeout;
+//          return;
+//      }
+//  
+//      proc->status.process_state = WAITTING;
+//      if (proc->wait_state == 0 || proc->wait_state & WT_SUSPEND_TIMER) {
+//          list_del(&proc->state_link);
+//          list_add_after(&part->timeout_set, &proc->state_link);
+//      }
+//      proc->wait_state |= WT_TIMER;
+//  }
 
 // arinc 653 api
 
-int arinc_lock_level = 0;
+static void init_proc_context(struct proc_struct *proc) {
+    proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE) - 1;
+    memset(proc->tf, 0, sizeof(struct trapframe));
+    memset(&proc->context, 0, sizeof(struct context));
+    cprintf("set up user and kernel stack pass.\n");
+
+    uintptr_t ustack = proc->ustack;
+    uintptr_t ustack_size = proc->status.attributes.stack_size;
+    uintptr_t entry = (uintptr_t)proc->status.attributes.entry_point;
+    // copy thread
+    proc->tf->tf_regs.reg_eax = 0;
+    proc->tf->tf_esp = ustack + ustack_size;
+    proc->tf->tf_eflags |= FL_IF;
+    proc->tf->tf_cs = USER_CS;
+    proc->tf->tf_ds = USER_DS;
+    proc->tf->tf_es = USER_DS;
+    proc->tf->tf_ss = USER_DS;
+    proc->tf->tf_eip = (uint32_t)entry;
+
+    proc->context.eip = (uintptr_t)forkret;
+    proc->context.esp = (uintptr_t)(proc->tf);
+
+    cprintf("copy thread pass.\n");
+}
+
+static void set_proc_link(struct proc_struct *proc) {
+    // add proc to runlist
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    {
+        proc->pid = get_pid();
+        hash_proc(proc);
+        set_links(proc);
+    }
+    local_intr_restore(intr_flag);
+
+    // new partition schedule, add to partition set
+    partition_t *part = proc->part;
+    list_add(&part->proc_set, &proc->part_link);
+    proc->status.process_state = DORMANT;
+    list_add(&part->dormant_set, &proc->run_link);
+    part->proc_num++;
+}
+
 void do_create_process(process_attribute_t *attr, 
                     process_id_t *pid,   
-                    return_code_t *return_code) {
+                    return_code_t *return_code) 
+{
+    partition_t *part = current->part;
     if (!valid_nr_proc()) {
         *return_code = INVALID_CONFIG;
         return ;
@@ -1182,6 +1230,11 @@ void do_create_process(process_attribute_t *attr,
         return ;
     }
 
+    if (part->status.operating_mode == NORMAL) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+
     // operating mode
     struct proc_struct *proc;
     // alloc proc and pid
@@ -1193,42 +1246,22 @@ void do_create_process(process_attribute_t *attr,
     proc->part = current->part;
 
     // set up user and kernel stack
-    int stack_size = attr->stack_size;
-    uintptr_t stack = 0;
-    int ret;
-
-    stack = alloc_proc_stack(stack_size);
-//    if ((ret = do_mmap(&stack, stack_size, VM_WRITE | VM_STACK)) != 0) {
-//        cprintf("do_create_process: do_mmap failed.\n");
-//        goto bad_proc_alloc;        
-//    }
-
-    cprintf("stack_addr: %u.\n", stack);
+    if (setup_ustack(proc) != 0) {
+        *return_code = INVALID_CONFIG;
+        kfree(proc);
+        return;
+    }
+    cprintf("stack_addr: %x.\n", proc->ustack);
     // assert(user_mem_check(current->mm, stack, stack_size, 1));
 
-    if ((ret = setup_kstack(proc)) != 0) {
-        goto bad_user_stack_alloc;
+    if (setup_kstack(proc) != 0) {
+        *return_code = INVALID_CONFIG;
+        do_munmap(proc->ustack, attr->stack_size);
+        kfree(proc);
+        return;
     }
 
-    proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE) - 1;
-    memset(proc->tf, 0, sizeof(struct trapframe));
-    memset(&proc->context, 0, sizeof(struct context));
-    cprintf("set up user and kernel stack pass.\n");
-
-    // copy thread
-    proc->tf->tf_regs.reg_eax = 0;
-    proc->tf->tf_esp = stack + stack_size;
-    proc->tf->tf_eflags |= FL_IF;
-    proc->tf->tf_cs = USER_CS;
-    proc->tf->tf_ds = USER_DS;
-    proc->tf->tf_es = USER_DS;
-    proc->tf->tf_ss = USER_DS;
-    proc->tf->tf_eip = (uint32_t)attr->entry_point;
-
-    proc->context.eip = (uintptr_t)forkret;
-    proc->context.esp = (uintptr_t)(proc->tf);
-
-    cprintf("copy thread pass.\n");
+    init_proc_context(proc);
 
     // set mm
     struct mm_struct *mm = current->mm;
@@ -1236,38 +1269,12 @@ void do_create_process(process_attribute_t *attr,
     proc->mm = mm;
     proc->cr3 = PADDR(mm->pgdir);
 
+    set_proc_link(proc);
 
-
-    // add proc to runlist
-    bool intr_flag;
-    local_intr_save(intr_flag);
-    {
-        proc->pid = get_pid();
-        hash_proc(proc);
-        set_links(proc);
-    }
-    local_intr_restore(intr_flag);
-
-    // new partition schedule, add to partition set
-    partition_t *part = proc->part;
-    list_add(&part->proc_set, &proc->part_link);
-    proc->status.process_state = DORMANT;
-    list_add(&part->dormant_set, &proc->state_link);
-    part->proc_num++;
-
-    wakeup_proc(proc);
-    
+    proc->status.process_state = DORMANT; 
     *pid = proc->pid;
-    ret = 0;
-    return ;
-
-
-bad_user_stack_alloc:
-    do_munmap(stack, stack_size);
-
-bad_proc_alloc:
-    kfree(proc);
-
+    *return_code = NO_ERROR;
+    return;
 }
 
 
@@ -1318,10 +1325,13 @@ void do_suspend_self(uint32_t time_out, return_code_t *return_code) {
     if (time_out == 0) {
         *return_code = NO_ERROR;
     } else {
-        current->status.process_state = WAITTING;
-        current->wait_state |= WT_TIMER | WT_SUSPEND | WT_SUSPEND_TIMER;
+        struct proc_struct *proc = current;
+        proc->status.process_state = WAITTING;
+        list_del_init(&proc->run_link);
+        set_wt_flag(proc, WT_TIMER | WT_SUSPEND);
+        timer_t *timer;
         if (time_out != INFINITE_TIME_VALUE) {
-            timer_t *timer = kmalloc(sizeof(timer_t));
+            timer = kmalloc(sizeof(timer_t));
             timer_init(timer, current, time_out);
             add_timer(timer);
             current->timer = timer;
@@ -1329,10 +1339,12 @@ void do_suspend_self(uint32_t time_out, return_code_t *return_code) {
         }
 
         schedule();
-        if (current->timeout_deadline <= ticks) {
+        kfree(timer);
+        if (proc->timer == NULL) {
             *return_code = TIMED_OUT;
             return;
         } else {
+            proc->timer = NULL;
             *return_code = NO_ERROR;
             return;
         }
@@ -1365,9 +1377,9 @@ void do_suspend(process_id_t process_id, return_code_t *return_code) {
         *return_code = NO_ACTION;
         return;
     } else {
+        list_del_init(&proc->run_link);
         proc->status.process_state = WAITTING;
-        proc->wait_state |= WT_SUSPEND;
-        list_del(&proc->state_link);
+        set_wt_flag(proc, WT_SUSPEND);
     }
 }
 
@@ -1388,23 +1400,30 @@ void do_resume(process_id_t process_id, return_code_t *return_code) {
         return;
     }
 
-    if (!(proc->wait_state & WT_SUSPEND)) {
+    if (!test_wt_flag(proc, WT_SUSPEND)) {
         *return_code = NO_ACTION;
         return;
     }
 
-    if (proc->timeout_deadline <= ticks) {
-        proc->timeout_deadline = 0;
+    if (test_wt_flag(proc, WT_SUSPEND) && test_wt_flag(proc, WT_TIMER)) {
+        // do not set proc->timer to NULL
         del_timer(proc->timer);
-        list_del(&proc->state_link);
+    }
+    // TODO
+    if (!test_wt_flag(proc, WT_KSEM) && !test_wt_flag(proc, WT_EVENT)) {
+        proc->status.process_state = READY;
         wakeup_proc(proc);
-        schedule();
+        if (PREEMPTION) {
+            schedule();
+        }
     }
     *return_code = NO_ERROR;
 }
 
 void do_stop_self(void) {
     current->status.process_state = DORMANT;
+    list_del_init(&current->run_link);
+    list_add_after(&current->part->dormant_set, &current->run_link);
     schedule();
 }
 
@@ -1421,12 +1440,14 @@ void do_stop(process_id_t process_id, return_code_t *return_code) {
     }
 
     proc->status.process_state = DORMANT;
+    list_del_init(&proc->run_link);
     if (proc->wait_state != 0) {
-        if (proc->wait_state & WT_TIMER) {
+        if (test_wt_flag(proc, WT_TIMER)) {
             del_timer(proc->timer);
             kfree(proc->timer);
+            proc->timer = NULL;
         }
-        list_del(&proc->state_link);
+        proc->wait_state = 0;
     }
     *return_code = NO_ERROR;
 }
@@ -1446,16 +1467,19 @@ void do_start(process_id_t process_id, return_code_t *return_code) {
     if (proc->status.attributes.period == INFINITE_TIME_VALUE) {
         proc->status.current_priority = proc_baseproi(proc);
         // reset context and stack
+        init_proc_context(proc);
         partition_t *part = proc->part;
         if (part->status.operating_mode == NORMAL) {
             proc->status.process_state = READY;
             proc->time_slice = proc->status.attributes.time_capacity;
+            list_del_init(&proc->run_link);
             wakeup_proc(proc);
             if (PREEMPTION) {
                 schedule();
             }
         } else {
             proc->status.process_state = WAITTING;
+            set_wt_flag(proc, WT_PNORMAL);
         }
         *return_code = NO_ERROR;   
     }

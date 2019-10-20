@@ -40,10 +40,10 @@ struct proc_struct *pick_next(void) {
     partition_t *init_part = get_partition(0);
     struct proc_struct *next = NULL;
 
-    if (current == initproc && init_part->done != 1)
+    if (current == initproc && init_part->scheduling == 1)
         return current;
 
-    if (part->deadline < ticks || part->done) {
+    if (part->deadline < ticks || !part->scheduling) {
         part = next_partition();
         part->deadline = ticks + part->status.duration;
     }
@@ -58,7 +58,6 @@ static void arinc_sched_init(struct run_queue *rq) {
 }
 
 static void arinc_sched_enqueue(struct run_queue *rq, struct proc_struct *proc) {
-    (void*)rq;
 
     partition_t *part = proc->part;
     if (part == NULL) {
@@ -82,7 +81,6 @@ static void arinc_sched_enqueue(struct run_queue *rq, struct proc_struct *proc) 
 
 
 static void arinc_sched_deque(struct run_queue *rq, struct proc_struct *proc) {
-    (void*)rq;
 
     partition_t *part = proc->part;
     assert(part != NULL);
@@ -100,8 +98,6 @@ static void arinc_sched_deque(struct run_queue *rq, struct proc_struct *proc) {
 
 
 static struct proc_struct *arinc_pick_next(struct run_queue *rq) {
-    (void*)rq;
-
     return pick_next();
 }
 

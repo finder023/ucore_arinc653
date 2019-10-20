@@ -14,7 +14,7 @@ typedef enum {
     NORMAL = 3
 } OPERATING_MODE_TYPE;
 
-
+typedef OPERATING_MODE_TYPE operating_mode_t;
 
 typedef enum {
     NORMAL_START = 0,
@@ -45,7 +45,7 @@ typedef struct partition_type {
     list_entry_t        dormant_set;
     list_entry_t        timeout_set;
     system_time_t       deadline;
-    int                 done;
+    int                 scheduling;
     int                 proc_num;
     struct proc_struct  *idle_proc;
 
@@ -76,6 +76,8 @@ partition_t *get_partition(int ppid);
 
 void check_timeout(partition_t *part);
 
+void do_get_partition_status(partition_status_t *status, return_code_t *return_code);
 
+void do_set_partition_mode(operating_mode_t mode, return_code_t *return_code);
 
 #endif

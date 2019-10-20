@@ -129,10 +129,11 @@ void do_set_event(event_id_t event_id, return_code_t *return_code) {
         proc = le2proc(le, state_link);
         if (proc->timer != NULL) {
             del_timer(proc->timer);
+            clear_wt_flag(proc, WT_TIMER);
         }
 
         proc->status.process_state = READY;
-        proc->wait_state &= ~WT_EVENT;
+        clear_wt_flag(proc, WT_EVENT);
         wakeup_proc(proc);
     }
 
@@ -184,7 +185,7 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
     else if (time_out == INFINITE_TIME_VALUE) {
         proc = current;
         proc->status.process_state = WAITTING;
-        proc->wait_state |= WT_EVENT;
+        set_wt_flag(proc, WT_EVENT);
         list_del_init(&proc->run_link);
         list_add_before(&event->waiting_thread, &proc->state_link);
 
@@ -195,7 +196,7 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
     } else {
         proc = current;
         proc->status.process_state = WAITTING;
-        proc->wait_state |= (WT_EVENT | WT_TIMER);
+        set_wt_flag(proc, WT_TIMER | WT_EVENT);
         list_del_init(&proc->run_link);
         list_add_after(&event->waiting_thread, &proc->state_link);
 
@@ -207,18 +208,15 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
 
         schedule();
 
+        kfree(timer);
         if (proc->timer == NULL) {
             *return_code = TIMED_OUT;
         }
         else {
             *return_code = NO_ERROR;
-            proc->wait_state &= ~WT_TIMER;
             proc->timer = NULL;
         }
-
     }
-
-
 }
 
 void do_get_event_id(event_name_t event_name, event_id_t *event_id, return_code_t *return_code) {

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ulib.h>
 #include <arinc_proc.h>
+#include <partition.h>
 
 size_t freq = 8000;
 
@@ -37,11 +38,19 @@ int main(void) {
     if (ret != NO_ERROR)
         panic("create process failed.\n");
     cprintf("create process: %d\n", apid);
+    start(apid, &ret);
+    if (ret != NO_ERROR) {
+        panic("start process failed: %d.\n", pid);
+    }
     create_process(&attr, &apid, &ret);
     if (ret != NO_ERROR)
         panic("create process failed.\n");
     cprintf("create process: %d\n", apid);
-
+    start(apid, &ret);
+    if (ret != NO_ERROR) {
+        panic("start process failed: %d.\n", pid);
+    }
+    set_partition_mode(NORMAL, &ret);
     // idle process
     while (1);
     return 0;

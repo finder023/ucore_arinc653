@@ -234,3 +234,11 @@ void sys_get_event_status(event_id_t event_id, event_status_t *event_status, ret
 {
     syscall(SYS_geteventstatus, event_id, event_status, return_code);
 }
+
+void sys_get_partition_status(partition_status_t *status, return_code_t *return_code) {
+    syscall(SYS_getpartitionstatus, status, return_code);
+}
+
+void sys_set_partition_mode(operating_mode_t mode, return_code_t *return_code) {
+    syscall(SYS_setpartitionstatus, mode, return_code);
+}

@@ -78,7 +78,7 @@ typedef APEX_INTEGER MESSAGE_SIZE_TYPE;
 typedef APEX_INTEGER MESSAGE_RANGE_TYPE;
 typedef enum { SOURCE = 0, DESTINATION = 1 } PORT_DIRECTION_TYPE;
 typedef enum { FIFO = 0, PRIORITY = 1 } QUEUING_DISCIPLINE_TYPE;
-typedef APEX_LONG_INTEGER SYSTEM_TIME_TYPE;
+typedef APEX_INTEGER SYSTEM_TIME_TYPE;
 
 typedef NAME_TYPE                   name_t;
 typedef SYSTEM_ADDRESS_TYPE         system_address_t;

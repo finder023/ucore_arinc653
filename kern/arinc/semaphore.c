@@ -170,8 +170,9 @@ void do_wait_semaphore (
     else if (time_out == INFINITE_TIME_VALUE) {
         pthread = current;
         pthread->status.process_state = WAITTING;
-        pthread->wait_state &= WT_KSEM;
-        list_add_before(&sem->waiting_thread, &pthread->state_link);
+        set_wt_flag(pthread, WT_KSEM);
+        list_del_init(&pthread->run_link);
+        list_add_before(&sem->waiting_thread, &pthread->run_link);
         
         local_intr_restore(old_intr);
         schedule();
@@ -186,14 +187,16 @@ void do_wait_semaphore (
         timer_init(timer, pthread, time_out);
         add_timer(timer);
         pthread->timer = timer;
-        pthread->wait_state |= WT_TIMER;
-
+        set_wt_flag(pthread, WT_TIMER | WT_KSEM);
+        list_del_init(&pthread->run_link);
         local_intr_restore(old_intr);
         schedule();
 
+        kfree(timer);
         if (pthread->timer == NULL) {
             *return_code = TIMED_OUT;
         } else {
+            pthread->timer = NULL;
             *return_code = NO_ERROR;
         }
     }
@@ -230,14 +233,16 @@ void do_signal_semaphore(
 
         if (pthread->timer != NULL) {
             del_timer(pthread->timer);
-            pthread->timer = NULL;
-            pthread->wait_state &= ~WT_TIMER;
+            clear_wt_flag(pthread, WT_TIMER);
         }
 
-        if (!(pthread->wait_state & WT_SUSPEND)) {
+        clear_wt_flag(pthread, WT_KSEM);
+        list_del_init(&pthread->run_link);
+
+        local_intr_restore(old_status);
+        if (!test_wt_flag(pthread, WT_SUSPEND)) {
             pthread->status.process_state = READY;
             wakeup_proc(pthread);
-            local_intr_restore(old_status);
             if (PREEMPTION)
                 schedule();
         }

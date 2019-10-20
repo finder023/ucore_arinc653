@@ -4,6 +4,7 @@
 #include <arinc_proc.h>
 #include <semaphore.h>
 #include <event.h>
+#include <partition.h>
 
 int sys_exit(int error_code);
 int sys_fork(void);
@@ -103,6 +104,9 @@ void sys_get_event_id(event_name_t event_name, event_id_t *event_id, return_code
 
 void sys_get_event_status(event_id_t event_id, event_status_t *event_status, return_code_t *return_code);
 
+void sys_get_partition_status(partition_status_t *status, return_code_t *return_code);
+
+void sys_set_partition_mode(operating_mode_t mode, return_code_t *return_code);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 

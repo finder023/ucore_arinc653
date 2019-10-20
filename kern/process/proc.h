@@ -69,6 +69,7 @@ struct proc_struct {
     list_entry_t    state_link;
     int             timeout_deadline;
     void            *timer;
+    uintptr_t       ustack;
     // arinc653
     process_status_t    status;
 };
@@ -92,10 +93,15 @@ struct proc_struct {
 #define WT_TIMER            0x2     // wait timer
 #define WT_SUSPEND          0x4     // wait suspend
 #define WT_EVENT            0x8     // wait event
-#define WT_SUSPEND_TIMER    0x10    // suspend self with timeout
+#define WT_PNORMAL          0x10    // wait until partition normal
+
+#define set_wt_flag(proc, flag)   ((proc)->wait_state |= (flag))
+#define clear_wt_flag(proc, flag)   ((proc)->wait_state &= ~(flag))
+#define test_wt_flag(proc, flag)    ((proc)->wait_state & (flag))
 
 #define le2proc(le, member)         \
     to_struct((le), struct proc_struct, member)
+
 
 extern struct proc_struct *idleproc, *initproc, *current;
 
