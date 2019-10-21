@@ -8,14 +8,12 @@
 
 typedef NAME_TYPE SAMPLING_PORT_NAME_TYPE;
 typedef APEX_INTEGER SAMPLING_PORT_ID_TYPE;
-typedef enum { INVALID = 0, VALID = 1 } VALIDITY_TYPE;
 
 
 typedef SAMPLING_PORT_NAME_TYPE sampling_port_name_t;
 
 typedef SAMPLING_PORT_ID_TYPE   sampling_port_id_t;
 
-typedef VALIDITY_TYPE   validity_t;
 
 typedef struct {
     system_time_t   refresh_period;

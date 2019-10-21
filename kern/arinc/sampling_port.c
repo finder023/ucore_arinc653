@@ -41,6 +41,7 @@ static sampling_port_t* alloc_sampling_port(size_t max_size) {
     }
 
     memset(sample->name, 0, sizeof(sample->name));
+    memset(&sample->status, 0, sizeof(sampling_port_status_t));
     sample->buff = kmalloc(max_size);
     list_add_after(&all_sampling_port, &sample->list_link);
     nr_sampling_port++;

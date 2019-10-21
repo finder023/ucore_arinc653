@@ -68,6 +68,15 @@
 #define SYS_getsamplingportid       67
 #define SYS_getsamplingportstatus   68
 
+// queuing port
+#define SYS_createqueuingport       69
+#define SYS_sendqueuingmessage      70
+#define SYS_receivequeuingmessage   71
+#define SYS_getqueuingportid        72
+#define SYS_getqueuingportstatus    73
+#define SYS_clearqueuingport        74
+
+
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255
 

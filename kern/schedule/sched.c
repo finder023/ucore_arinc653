@@ -62,6 +62,11 @@ wakeup_proc(struct proc_struct *proc) {
     bool intr_flag;
     local_intr_save(intr_flag);
     {
+        if (test_wt_flag(proc, WT_SUSPEND)) {
+            local_intr_restore(intr_flag);
+            return;
+        }
+        list_del_init(&proc->run_link);
         proc->wait_state = 0;
         proc_state(proc) = READY; 
         if (proc != current) {

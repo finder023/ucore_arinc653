@@ -102,4 +102,8 @@ typedef LOCK_LEVEL_TYPE     lock_level_t;
 
 #define MAX_TIME_OUT    1000
 
+typedef enum { INVALID = 0, VALID = 1 } VALIDITY_TYPE;
+
+typedef VALIDITY_TYPE validity_t;
+
 #endif

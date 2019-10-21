@@ -95,6 +95,7 @@ struct proc_struct {
 #define WT_SUSPEND          0x4     // wait suspend
 #define WT_EVENT            0x8     // wait event
 #define WT_PNORMAL          0x10    // wait until partition normal
+#define WT_QUEUE            0x20    // wait queuing port
 
 #define set_wt_flag(proc, flag)   ((proc)->wait_state |= (flag))
 #define clear_wt_flag(proc, flag)   ((proc)->wait_state &= ~(flag))

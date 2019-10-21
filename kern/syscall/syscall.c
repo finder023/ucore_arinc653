@@ -12,6 +12,7 @@
 #include <event.h>
 #include <arinc_time.h>
 #include <sampling_port.h>
+#include <queuing_port.h>
 
 
 static int
@@ -394,6 +395,72 @@ static int sys_get_sampling_port_status(uint32_t arg[]) {
     return *return_code;
 }
 
+static int sys_create_queuing_port(uint32_t arg[]) {
+    queuing_port_name_t name;
+    strcpy(name, (char*)arg[0]);
+    queuing_port_status_t *status = (queuing_port_status_t*)arg[1];
+    message_size_t max_msg_size = status->max_message_size;
+    message_range_t max_nb_msg = status->max_nb_message;
+    port_direction_t port_direction = status->port_direction;
+    queuing_discipline_t queuing_discipline = (queuing_discipline_t)arg[2];
+    queuing_port_id_t *id = (queuing_port_id_t*)arg[3];
+    return_code_t *return_code = (return_code_t*)arg[4];
+
+    do_create_queuing_port(name, max_msg_size, max_nb_msg, port_direction,
+        queuing_discipline, id, return_code);
+    return *return_code;
+}
+
+static int sys_send_queuing_message(uint32_t arg[]) {
+    queuing_port_id_t id = arg[0];
+    message_addr_t msg_addr = (message_addr_t)arg[1];
+    message_size_t length = arg[2];
+    system_time_t time_out = arg[3];
+    return_code_t *return_code = (return_code_t*)return_code;
+
+    do_send_queuing_message(id, msg_addr, length, time_out, return_code);
+    return *return_code;
+}
+
+static int sys_receive_queuing_message(uint32_t arg[]) {
+    queuing_port_id_t id = arg[0];
+    system_time_t time_out = arg[1];
+    message_addr_t message_addr = (message_addr_t)arg[2];
+    message_size_t *length = (message_size_t*)arg[3];
+    return_code_t *return_code = (return_code_t*)arg[4];
+
+    do_receive_queuing_message(id, time_out, message_addr, length, return_code);
+    return *return_code;
+}
+
+static int sys_get_queuing_port_id(uint32_t arg[]) {
+    queuing_port_name_t name;
+    strcpy(name, (char*)arg[0]);
+    queuing_port_id_t *id = (queuing_port_id_t*)arg[1]; 
+    return_code_t *return_code = (return_code_t*)arg[2];
+
+    do_get_queuing_port_id(name, id, return_code);
+    return *return_code;
+}
+
+static int sys_get_queuing_port_status(uint32_t arg[]) {
+    queuing_port_id_t id = arg[0];
+    queuing_port_status_t *status = (queuing_port_status_t*)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[2];
+
+    do_get_queuing_port_status(id, status, return_code);
+    return *return_code;
+}
+
+static int sys_clear_queuing_port(uint32_t arg[]) {
+    queuing_port_id_t id = arg[0];
+    return_code_t *return_code = (return_code_t*)arg[1];
+
+    do_clear_queuing_port(id, return_code);
+    return *return_code;
+}
+
+
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -444,6 +511,12 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_readsamplingmessage]   sys_read_sampling_message,
     [SYS_getsamplingportid]     sys_get_sampling_port_id,
     [SYS_getsamplingportstatus] sys_get_sampling_port_status,
+    [SYS_createqueuingport]     sys_create_queuing_port,
+    [SYS_sendqueuingmessage]    sys_send_queuing_message, 
+    [SYS_receivequeuingmessage] sys_receive_queuing_message,
+    [SYS_getqueuingportid]      sys_get_queuing_port_id,
+    [SYS_getqueuingportstatus]  sys_get_queuing_port_status,
+    [SYS_clearqueuingport]      sys_clear_queuing_port,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

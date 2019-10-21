@@ -6,6 +6,7 @@
 #include <event.h>
 #include <partition.h>
 #include <sampling_port.h>
+#include <queuing_port.h>
 
 int sys_exit(int error_code);
 int sys_fork(void);
@@ -136,6 +137,32 @@ void sys_get_sampling_port_id(sampling_port_name_t name,
 
 void sys_get_sampling_port_status(sampling_port_id_t sampling_port_id,
         sampling_port_status_t *sampling_port_status, return_code_t *return_code);
+
+
+// queuing port
+
+void sys_create_queuing_port(queuing_port_name_t name, message_size_t max_msg_size,
+        message_range_t max_nb_msg, port_direction_t port_direction,
+        queuing_discipline_t queuing_discipline, queuing_port_id_t *id,
+        return_code_t *return_code);
+
+void sys_send_queuing_message(queuing_port_id_t id, message_addr_t msg_addr,
+        message_size_t length, system_time_t time_out,
+        return_code_t *return_code);
+
+void sys_receive_queuing_message(queuing_port_id_t id, system_time_t time_out,
+        message_addr_t message_addr, message_size_t *length,
+        return_code_t *return_code);
+
+void sys_get_queuing_port_id(queuing_port_name_t name, queuing_port_id_t *id, 
+        return_code_t *return_code);
+
+void sys_get_queuing_port_status(queuing_port_id_t id, queuing_port_status_t *status,
+        return_code_t *return_code);
+
+void sys_clear_queuing_port(queuing_port_id_t id, return_code_t *return_code);
+
+
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 
