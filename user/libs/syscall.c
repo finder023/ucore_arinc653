@@ -4,6 +4,7 @@
 #include <syscall.h>
 #include <arinc_proc.h>
 #include <semaphore.h>
+#include <sampling_port.h>
 
 #define MAX_ARGS            5
 
@@ -93,7 +94,9 @@ int sys_get_partition_id(void) {
     return syscall(SYS_getpartid);
 }
 
-int sys_create_process(process_attribute_t *attr, process_id_t *pid, return_code_t *ret) {
+int sys_create_process(process_attribute_t *attr, process_id_t *pid,
+    return_code_t *ret)
+{
     return syscall(SYS_createproc, attr, pid, ret);
 } 
 
@@ -257,4 +260,45 @@ void sys_get_time(system_time_t *system_time, return_code_t *return_code) {
 
 void sys_replenish(system_time_t budget_time, return_code_t *return_code) {
     syscall(SYS_replenish, budget_time, return_code);
+}
+
+void sys_create_sampling_port(sampling_port_name_t name,
+    message_size_t max_msg_size, port_direction_t port_direction,
+    system_time_t refresh_period, sampling_port_id_t *sampling_port_id,
+    return_code_t *return_code)
+{
+    sampling_port_status_t status;
+    status.max_message_size = max_msg_size;
+    status.port_direction = port_direction;
+    status.refresh_period = refresh_period;
+    syscall(SYS_createsamplingport, name, &status, sampling_port_id,
+        return_code);
+}
+
+void sys_write_sampling_message(sampling_port_id_t sampling_port_id,
+    message_addr_t msg_addr, message_size_t length, return_code_t *return_code)
+{
+    syscall(SYS_writesamplingmessage, sampling_port_id, msg_addr, length,
+        return_code);
+}
+
+void sys_read_sampling_message(sampling_port_id_t sampling_port_id, 
+        message_addr_t msg_addr, message_size_t *length, validity_t *validity,
+        return_code_t *return_code)
+{
+    syscall(SYS_readsamplingmessage, sampling_port_id, msg_addr, length,
+        validity, return_code);
+}
+
+void sys_get_sampling_port_id(sampling_port_name_t name, 
+        sampling_port_id_t *sampling_port_id, return_code_t *return_code)
+{
+    syscall(SYS_getsamplingportid, name, sampling_port_id, return_code);
+}
+
+void sys_get_sampling_port_status(sampling_port_id_t sampling_port_id,
+    sampling_port_status_t *sampling_port_status, return_code_t *return_code)
+{
+    syscall(SYS_getsamplingportstatus, sampling_port_id, sampling_port_status,
+        return_code);
 }

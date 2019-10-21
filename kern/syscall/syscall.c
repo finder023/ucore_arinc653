@@ -11,6 +11,8 @@
 #include <semaphore.h>
 #include <event.h>
 #include <arinc_time.h>
+#include <sampling_port.h>
+
 
 static int
 sys_exit(uint32_t arg[]) {
@@ -332,6 +334,65 @@ static int sys_replenish(uint32_t arg[]) {
     do_replenish(budget_time, return_code);
 } 
 
+// sampling port
+static int sys_create_sampling_port(uint32_t arg[]) {
+    sampling_port_name_t name;
+    strcpy(name, (char*)arg[0]);
+    sampling_port_status_t *status = (sampling_port_status_t*)arg[1];
+    message_size_t max_msg_size = status->max_message_size;
+    port_direction_t port_direction = status->port_direction;
+    system_time_t refresh_period = status->refresh_period; 
+    sampling_port_id_t *sampling_port_id = (sampling_port_id_t*)arg[2];
+    return_code_t *return_code = (return_code_t*)arg[3];
+
+    do_create_sampling_port(name, max_msg_size, port_direction, refresh_period,
+        sampling_port_id, return_code);
+
+    return *return_code;
+}
+
+
+static int sys_write_sampling_message(uint32_t arg[]) {
+    sampling_port_id_t sampling_port_id = arg[0];
+    message_addr_t msg_addr = (message_addr_t)arg[1];
+    message_size_t length = arg[2];
+    return_code_t *return_code = (return_code_t*)arg[3];
+
+    do_write_sampling_message(sampling_port_id, msg_addr, length, return_code);
+    return *return_code;
+}
+
+static int sys_read_sampling_message(uint32_t arg[]) {
+    sampling_port_id_t sampling_port_id = arg[0]; 
+    message_addr_t msg_addr = (message_addr_t)arg[1];
+    message_size_t *length = (message_size_t*)arg[2];
+    validity_t *validity = (validity_t*)arg[3];
+    return_code_t *return_code = (return_code_t*)arg[4];
+
+    do_read_sampling_message(sampling_port_id, msg_addr, length, validity,
+            return_code);
+
+    return *return_code;
+}
+
+static int sys_get_sampling_port_id(uint32_t arg[]) {
+    sampling_port_name_t name;
+    strcpy(name, (char*)arg[0]);
+    sampling_port_id_t *sampling_port_id = (sampling_port_id_t*)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[1];
+
+    do_get_sampling_port_id(name, sampling_port_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_sampling_port_status(uint32_t arg[]) {
+    sampling_port_id_t sampling_port_id = arg[0];
+    sampling_port_status_t *sampling_port_status = (sampling_port_status_t*)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[2];
+
+    do_get_sampling_port_status(sampling_port_id, sampling_port_status, return_code);
+    return *return_code;
+}
 
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
@@ -378,6 +439,11 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_periodicwait]          sys_periodic_wait,
     [SYS_arincgettime]          sys_get_time,
     [SYS_replenish]             sys_replenish,
+    [SYS_createsamplingport]    sys_create_sampling_port,
+    [SYS_writesamplingmessage]  sys_write_sampling_message,
+    [SYS_readsamplingmessage]   sys_read_sampling_message,
+    [SYS_getsamplingportid]     sys_get_sampling_port_id,
+    [SYS_getsamplingportstatus] sys_get_sampling_port_status,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

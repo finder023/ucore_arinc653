@@ -131,7 +131,7 @@ static sampling_port_t *get_sample_by_name(sampling_port_name_t name) {
     list_entry_t *le;
     sampling_port_t *sample;
 
-    if ((le - find_list(&all_sampling_port, name, comp_name)) == NULL) {
+    if ((le = find_list(&all_sampling_port, name, comp_name)) == NULL) {
         return NULL;
     }
 
@@ -145,7 +145,7 @@ static sampling_port_t *get_sample_by_name(sampling_port_name_t name) {
 }
 
 
-void create_sampling_port(sampling_port_name_t name, message_size_t max_msg_size,
+void do_create_sampling_port(sampling_port_name_t name, message_size_t max_msg_size,
         port_direction_t port_direction, system_time_t refresh_period, 
         sampling_port_id_t *sampling_port_id, return_code_t *return_code)
 {
@@ -194,7 +194,7 @@ void create_sampling_port(sampling_port_name_t name, message_size_t max_msg_size
     *return_code = NO_ERROR;
 }
 
-void write_sampling_message(sampling_port_id_t sampling_port_id,
+void do_write_sampling_message(sampling_port_id_t sampling_port_id,
         message_addr_t msg_addr, message_size_t length,
         return_code_t *return_code)
 {
@@ -231,7 +231,7 @@ void write_sampling_message(sampling_port_id_t sampling_port_id,
     *return_code = NO_ERROR;
 }
 
-void read_sampling_message(sampling_port_id_t sampling_port_id, 
+void do_read_sampling_message(sampling_port_id_t sampling_port_id, 
         message_addr_t msg_addr, message_size_t *length, validity_t *validity,
         return_code_t *return_code) 
 {
@@ -273,7 +273,7 @@ void read_sampling_message(sampling_port_id_t sampling_port_id,
     *return_code = NO_ERROR;
 }
 
-void get_sampling_port_id(sampling_port_name_t name, 
+void do_get_sampling_port_id(sampling_port_name_t name, 
         sampling_port_id_t *sampling_port_id, return_code_t *return_code) 
 {
     sampling_port_t *sample = get_sample_by_name(name);
@@ -286,7 +286,7 @@ void get_sampling_port_id(sampling_port_name_t name,
     *return_code = NO_ERROR;
 }
 
-void get_sampling_port_status(sampling_port_id_t sampling_port_id,
+void do_get_sampling_port_status(sampling_port_id_t sampling_port_id,
         sampling_port_status_t *sampling_port_status, 
         return_code_t *return_code)
 {

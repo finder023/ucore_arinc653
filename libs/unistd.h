@@ -22,45 +22,51 @@
 #define SYS_pgdir           31
 
 // ARINC653
-#define SYS_getpartid           32
-#define SYS_createproc          33
-#define SYS_set_priority        34
-#define SYS_suspendself         35
-#define SYS_suspend             36
-#define SYS_resume              37
-#define SYS_stopself            38
-#define SYS_stop                39
-#define SYS_start               40
-#define SYS_delayedstart        41
-#define SYS_lockpreemption      42
-#define SYS_unlockpreemption    43
-#define SYS_getmyid             44
-#define SYS_getprocessid        45
-#define SYS_getprocessstatus    46
+#define SYS_getpartid               32
+#define SYS_createproc              33
+#define SYS_set_priority            34
+#define SYS_suspendself             35
+#define SYS_suspend                 36
+#define SYS_resume                  37
+#define SYS_stopself                38
+#define SYS_stop                    39
+#define SYS_start                   40
+#define SYS_delayedstart            41
+#define SYS_lockpreemption          42
+#define SYS_unlockpreemption        43
+#define SYS_getmyid                 44
+#define SYS_getprocessid            45
+#define SYS_getprocessstatus        46
 
-#define SYS_createsemaphore     47
-#define SYS_waitsemaphore       48
-#define SYS_signalsemaphore     49
-#define SYS_getsemaphoreid      50
-#define SYS_getsemaphorestatus  51
+#define SYS_createsemaphore         47
+#define SYS_waitsemaphore           48
+#define SYS_signalsemaphore         49
+#define SYS_getsemaphoreid          50
+#define SYS_getsemaphorestatus      51
 
-#define SYS_createevent         52
-#define SYS_setevent            53
-#define SYS_resetevent          54
-#define SYS_waitevent           55
-#define SYS_geteventid          56
-#define SYS_geteventstatus      57
+#define SYS_createevent             52
+#define SYS_setevent                53
+#define SYS_resetevent              54
+#define SYS_waitevent               55
+#define SYS_geteventid              56
+#define SYS_geteventstatus          57
 
 // partition
-#define SYS_getpartitionstatus  58
-#define SYS_setpartitionstatus  59
+#define SYS_getpartitionstatus      58
+#define SYS_setpartitionstatus      59
 
 // time
-#define SYS_timewait            60
-#define SYS_periodicwait        61
-#define SYS_arincgettime        62
-#define SYS_replenish           63
+#define SYS_timewait                60
+#define SYS_periodicwait            61
+#define SYS_arincgettime            62
+#define SYS_replenish               63
 
+// sampling port
+#define SYS_createsamplingport      64    
+#define SYS_writesamplingmessage    65
+#define SYS_readsamplingmessage     66    
+#define SYS_getsamplingportid       67
+#define SYS_getsamplingportstatus   68
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255
