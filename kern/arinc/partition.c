@@ -43,6 +43,7 @@ static partition_t *alloc_partition(void) {
     part->scheduling = 0;
     part->deadline = 0;
     part->proc_num = 0;
+    part->first_run = 0;
 
     memset(&part->status, 0, sizeof(partition_status_t));
 
@@ -75,10 +76,18 @@ partition_t *next_partition(void) {
     partition_t *part = current->part;
     assert(!list_empty(&partition_set));
 
+    partition_t *target;
     list_entry_t *next = list_next(&part->part_tag); 
-    if (next == &partition_set) {
-        next = list_next(&partition_set);
+    while (next != &part->part_tag) {
+        if (next == &partition_set) {
+            next = list_next(next);
+        }
+        target = le2part(next, part_tag);
+        if (target->scheduling || !target->first_run)
+            break;
+        next = list_next(next);
     }
+
     return le2part(next, part_tag);
 }
 
@@ -182,6 +191,8 @@ void do_set_partition_mode(operating_mode_t mode, return_code_t *return_code) {
             le = list_next(le);
         }
         part->scheduling = 1;
+        if (part->first_run == 0)
+            part->first_run = 1;
         part->status.lock_level = 0;
         local_intr_restore(old_intr);
     }

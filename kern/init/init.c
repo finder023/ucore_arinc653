@@ -14,6 +14,7 @@
 #include <proc.h>
 #include <partition.h>
 #include <sampling_port.h>
+#include <queuing_port.h>
 
 int kern_init(void) __attribute__((noreturn));
 
@@ -43,6 +44,7 @@ kern_init(void) {
     proc_init();                // init process table
 
     sampling_port_init();
+    queuing_port_init();
     
     ide_init();                 // init ide devices
     swap_init();                // init swap

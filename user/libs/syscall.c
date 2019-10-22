@@ -330,7 +330,7 @@ void sys_receive_queuing_message(queuing_port_id_t id, system_time_t time_out,
         message_addr_t message_addr, message_size_t *length,
         return_code_t *return_code)
 {
-    syscall(SYS_receivequeuingmessage, id, message_addr, length,
+    syscall(SYS_receivequeuingmessage, id, time_out, message_addr, length,
         return_code);
 }
 

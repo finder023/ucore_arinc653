@@ -224,7 +224,7 @@ static int sys_wait_semaphore ( uint32_t arg[]) {
 
 static int sys_signal_semaphore(uint32_t arg[]) {
     semaphore_id_t  semaphore_id = arg[0];
-    return_code_t   *return_code = (return_code_t*)arg[2];
+    return_code_t   *return_code = (return_code_t*)arg[1];
     do_signal_semaphore(semaphore_id, return_code);
     return *return_code;
 }
@@ -380,7 +380,7 @@ static int sys_get_sampling_port_id(uint32_t arg[]) {
     sampling_port_name_t name;
     strcpy(name, (char*)arg[0]);
     sampling_port_id_t *sampling_port_id = (sampling_port_id_t*)arg[1];
-    return_code_t *return_code = (return_code_t*)arg[1];
+    return_code_t *return_code = (return_code_t*)arg[2];
 
     do_get_sampling_port_id(name, sampling_port_id, return_code);
     return *return_code;

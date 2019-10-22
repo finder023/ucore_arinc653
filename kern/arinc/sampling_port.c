@@ -215,10 +215,10 @@ void do_write_sampling_message(sampling_port_id_t sampling_port_id,
         return;
     }
 
-    if (sample->status.port_direction != SOURCE) {
-        *return_code = INVALID_MODE;
-        return;
-    }
+//    if (sample->status.port_direction != SOURCE) {
+//        *return_code = INVALID_MODE;
+//        return;
+//    }
 
     bool old_intr;
     local_intr_save(old_intr);
@@ -242,10 +242,10 @@ void do_read_sampling_message(sampling_port_id_t sampling_port_id,
         return;
     }
 
-    if (sample->status.port_direction != DESTINATION) {
-        *return_code = INVALID_MODE;
-        return;
-    }
+//    if (sample->status.port_direction != DESTINATION) {
+//        *return_code = INVALID_MODE;
+//        return;
+//    }
 
     if (sample->length == 0) {
         *length = 0;

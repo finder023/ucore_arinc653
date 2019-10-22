@@ -876,19 +876,33 @@ user_main(void *arg) {
     PARTITION_MAIN_DEF(5)
 
 
-#define PARTITION_EXEC(part_id)                                         \
-    int part_##part_id;                                                 \
-    if (partition_add(&part_##part_id) == NULL) {                       \
-        panic("add part_" #part_id " failed.\n");                       \
-    }                                                                   \
-    int pid_##part_id = kernel_thread(partition_##part_id, NULL, 0);    \
-    if (pid_##part_id <= 0) {                                           \
-        panic("create part_" #part_id " failed.\n");                    \
-    }                                                                   \
+#define PARTITION_EXEC(part_id) do {                                \
+    if (partition_add(&paid) == NULL) {                             \
+        panic("add part_" #part_id " failed.\n");                   \
+    }                                                               \
+    ptid = kernel_thread(partition_##part_id, NULL, 0);             \
+    if (ptid <= 0) {                                                \
+        panic("create part_" #part_id " failed.\n");                \
+    }                                                               \
+    if ((pth = find_proc(ptid)) == NULL) {                          \
+        panic("thread %d not exist in partition exec.\n");          \
+    }                                                               \
+    if ((parti = get_partition(paid)) == NULL) {                    \
+        panic("get partition %d failed in paritition exec.\n");     \
+    }                                                               \
+    parti->idle_proc = pth;                                         \
+} while (0)
 
+
+#define VAR_DEF                 \
+    int paid;                   \
+    int ptid;                   \
+    struct proc_struct *pth;    \
+    partition_t *parti;
 
 
 #define EXEC_1_PARTITION    \
+    VAR_DEF;                \
     PARTITION_EXEC(0)
 
 #define EXEC_2_PARTITION    \
@@ -912,7 +926,7 @@ user_main(void *arg) {
     PARTITION_EXEC(5)
 
 
-DEF_3_PARTITION
+DEF_1_PARTITION
 
 static int
 init_main(void *arg) {
@@ -924,7 +938,7 @@ init_main(void *arg) {
 //        panic("create user_main failed.\n");
 //    }
 
-    EXEC_3_PARTITION;
+    EXEC_1_PARTITION;
  // extern void check_sync(void);
     // check_sync();                // check philosopher sync problem
 
@@ -942,6 +956,7 @@ init_main(void *arg) {
 //    cprintf("init check memory pass.\n");
     partition_t *part = current->part;
     part->scheduling = 0;
+    part->first_run = 1;
     part->status.operating_mode = NORMAL;
     cprintf("init partition done.\n");
     while (1);
@@ -970,6 +985,8 @@ proc_init(void) {
     idleproc->need_resched = 1;
     set_proc_name(idleproc, "idle");
     nr_process ++;
+    // set min priority
+    idleproc->status.current_priority = 0;
 
     current = idleproc;
 

@@ -71,6 +71,7 @@ static sem_t *alloc_sem(void) {
         return NULL;
     }
 
+    memset(&sem->sem_status, 0, sizeof(semaphore_status_t));
     list_init(&sem->sem_link);
     list_init(&sem->waiting_thread);
     sem->sem_id = sem_id_generator();
@@ -129,6 +130,7 @@ void do_create_semaphore (
     sem->sem_status.max_value = max_value;
     sem->sem_status.waiting_processes = 0;
 
+    list_add_after(&current->part->all_sem, &sem->sem_link);
     current->part->sem_num += 1;
 
     *return_code = NO_ERROR;
@@ -156,6 +158,7 @@ void do_wait_semaphore (
     local_intr_save(old_intr);
     if (sem->sem_status.current_value > 0) {
         sem->sem_status.current_value--;
+        local_intr_restore(old_intr);
         *return_code = NO_ERROR;
     } 
     else if (time_out == 0) {
@@ -172,10 +175,13 @@ void do_wait_semaphore (
         pthread->status.process_state = WAITTING;
         set_wt_flag(pthread, WT_KSEM);
         list_del_init(&pthread->run_link);
+        sem->sem_status.waiting_processes += 1;
         list_add_before(&sem->waiting_thread, &pthread->run_link);
         
         local_intr_restore(old_intr);
         schedule();
+
+        clear_wt_flag(pthread, WT_KSEM);
         *return_code = NO_ERROR;
     } 
     else {
@@ -189,13 +195,21 @@ void do_wait_semaphore (
         pthread->timer = timer;
         set_wt_flag(pthread, WT_TIMER | WT_KSEM);
         list_del_init(&pthread->run_link);
+        list_add_after(&sem->waiting_thread, &pthread->run_link);
+        sem->sem_status.waiting_processes++;
+
         local_intr_restore(old_intr);
         schedule();
 
+
+        del_timer(timer);
         kfree(timer);
-        if (pthread->timer == NULL) {
+        sem->sem_status.waiting_processes--;
+        if (pthread->timer == NULL && test_wt_flag(pthread, WT_TIMER)) {
+            clear_wt_flag(pthread, WT_TIMER | WT_KSEM);
             *return_code = TIMED_OUT;
         } else {
+            clear_wt_flag(pthread, WT_KSEM);
             pthread->timer = NULL;
             *return_code = NO_ERROR;
         }
@@ -229,14 +243,8 @@ void do_signal_semaphore(
         struct proc_struct *pthread;
         
         elem = list_next(&sem->waiting_thread);
-        pthread = le2proc(elem, state_link);
+        pthread = le2proc(elem, run_link);
 
-        if (pthread->timer != NULL) {
-            del_timer(pthread->timer);
-            clear_wt_flag(pthread, WT_TIMER);
-        }
-
-        clear_wt_flag(pthread, WT_KSEM);
         list_del_init(&pthread->run_link);
 
         local_intr_restore(old_status);

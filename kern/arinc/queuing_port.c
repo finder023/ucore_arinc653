@@ -6,6 +6,7 @@
 #include <clock.h>
 #include <kmalloc.h>
 #include <sched.h>
+#include <stdio.h>
 
 // all queuing port set
 static list_entry_t all_queuing_port;
@@ -214,7 +215,7 @@ void do_create_queuing_port(queuing_port_name_t name, message_size_t max_msg_siz
         return;
     }
 
-    if (queuing_discipline == INVALID) {
+    if (queuing_discipline != FIFO && queuing_discipline != PRIORITY) {
         *return_code = INVALID_CONFIG;
         return;    
     }
@@ -266,10 +267,10 @@ void do_send_queuing_message(queuing_port_id_t id, message_addr_t msg_addr,
         return;
     }
 
-    if (queue->status.port_direction != SOURCE) {
-        *return_code = INVALID_MODE;
-        return;
-    }
+//    if (queue->status.port_direction != SOURCE) {
+//        *return_code = INVALID_MODE;
+//        return;
+//    }
 
     bool old_intr;
     local_intr_save(old_intr);
@@ -306,33 +307,44 @@ void do_send_queuing_message(queuing_port_id_t id, message_addr_t msg_addr,
         *return_code = INVALID_MODE;
     }
     else {
-        timer_t *timer;
+        timer_t *timer = NULL;
         if (time_out != INFINITE_TIME_VALUE) {
             timer = kmalloc(sizeof(timer_t));
             timer_init(timer, current, time_out);
             add_timer(timer);
-            set_wt_flag(current, WT_TIMER | WT_QUEUE);
+            set_wt_flag(current, WT_TIMER);
         }
 
         current->status.process_state = WAITTING;
         list_del_init(&current->run_link);
         list_add_after(&queue->waitting_thread, &current->run_link);
-        
+        set_wt_flag(current, WT_QUEUE);
+        queue->status.waiting_process++; 
         local_intr_restore(old_intr);
 
         schedule();
 
-        kfree(timer);
-        if (current->timer == NULL) {
-            clear_wt_flag(current, WT_QUEUE);
+        if (timer) {
+            del_timer(timer);
+            kfree(timer);
+        }
+        if (current->timer == NULL && test_wt_flag(current, WT_TIMER)) {
+            clear_wt_flag(current, WT_QUEUE | WT_TIMER);
+            queue->status.waiting_process--;
             *return_code = TIMED_OUT;
         }
         else {
             if (time_out != INFINITE_TIME_VALUE) {
-                clear_wt_flag(current, WT_QUEUE | WT_TIMER);
+                clear_wt_flag(current, WT_TIMER);
                 current->timer = NULL;
-                del_timer(timer);
             }
+
+            clear_wt_flag(current, WT_QUEUE);
+            memcpy(msg->buff, msg_addr, length);
+            msg->length = length;
+            list_add_before(&queue->msg_set, &msg->msg_link);
+            queue->status.nb_message++;
+            
             *return_code = NO_ERROR;
         }
     }
@@ -353,10 +365,11 @@ void do_receive_queuing_message(queuing_port_id_t id, system_time_t time_out,
         return;
     }
 
-    if (queue->status.port_direction != DESTINATION) {
-        *return_code = INVALID_MODE;
-        return;
-    }
+//    if (queue->status.port_direction != DESTINATION) {
+//        *return_code = INVALID_MODE;
+//        return;
+//    }
+
 
     list_entry_t *le;
     message_t *msg;
@@ -393,31 +406,39 @@ void do_receive_queuing_message(queuing_port_id_t id, system_time_t time_out,
         *return_code = INVALID_MODE;
     }
     else {
-        timer_t *timer;
+        timer_t *timer = NULL;
         if (time_out != INFINITE_TIME_VALUE) {
             timer = kmalloc(sizeof(timer_t));
             timer_init(timer, current, time_out);
             add_timer(timer);
+            set_wt_flag(current, WT_TIMER);
         }
         current->status.process_state = WAITTING;
         list_del_init(&current->run_link);
         list_add_after(&queue->waitting_thread, &current->run_link);
-        set_wt_flag(current, WT_TIMER | WT_QUEUE);
+        set_wt_flag(current, WT_QUEUE);
+        queue->status.waiting_process++;
 
         schedule();
 
-        if (current->timer == NULL) {
+        if (timer) {
+            del_timer(timer);
+            kfree(timer);
+        }
+
+        if (current->timer == NULL && test_wt_flag(current, WT_TIMER)) {
             *length = 0;
-            clear_wt_flag(current, WT_QUEUE);
+            queue->status.waiting_process--;
+            clear_wt_flag(current, WT_QUEUE | WT_TIMER);
             *return_code = TIMED_OUT;
         }
         else {
             if (time_out != INFINITE_TIME_VALUE) {
                 clear_wt_flag(current, WT_TIMER | WT_QUEUE);
                 current->timer = NULL;
-                del_timer(timer);
             }
 
+            clear_wt_flag(current, WT_QUEUE);
             list_entry_t *le = queue->msg_set.next;
             assert(le != &queue->msg_set);
             message_t *msg = le2msg(le, msg_link);

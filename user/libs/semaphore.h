@@ -2,7 +2,6 @@
 #define __L_USER_SEMAPHORE_H
 
 #include <apex.h>
-#include <list.h>
 
 typedef name_t              semaphore_name_t;
 typedef apex_integer_t      semaphore_id_t;
@@ -16,16 +15,6 @@ typedef struct semaphore_status_type {
 } semaphore_status_t;
 
 typedef struct semaphore_status_type semaphore_status_type;
-
-
-typedef struct sem_type {
-    semaphore_status_t  sem_status;
-    semaphore_name_t    sem_name;
-    semaphore_id_t      sem_id;
-    list_entry_t        waiting_thread;
-    list_entry_t        sem_link;
-} sem_t;
-
 
 
 void create_semaphore (

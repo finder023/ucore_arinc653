@@ -48,6 +48,7 @@ typedef struct partition_type {
     int                 scheduling;
     int                 proc_num;
     struct proc_struct  *idle_proc;
+    int                 first_run;
 
     // semaphore
     list_entry_t        all_sem;

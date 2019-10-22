@@ -67,7 +67,7 @@ wakeup_proc(struct proc_struct *proc) {
             return;
         }
         list_del_init(&proc->run_link);
-        proc->wait_state = 0;
+        // proc->wait_state = 0;
         proc_state(proc) = READY; 
         if (proc != current) {
             sched_class_enqueue(proc);
@@ -109,7 +109,7 @@ schedule(void) {
             sched_class_dequeue(next);
         }
         if (next == NULL) {
-            next = idleproc;
+            next = current->part->idle_proc;
         }
         assert(proc_state(next) == READY);
         next->runs ++;
@@ -183,7 +183,6 @@ run_timer_list(void) {
                 }
                 // clear wt flag
                 wakeup_proc(proc);
-                del_timer(timer);
                 proc->timer = NULL;
                 if (le == &timer_list) {
                     break;
