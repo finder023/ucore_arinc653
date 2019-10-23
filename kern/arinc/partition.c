@@ -44,6 +44,12 @@ static partition_t *alloc_partition(void) {
     part->buffer_id = 0;
     part->buffer_num = 0;
 
+    // blackboard init
+    list_init(&part->all_blackboard);
+    list_init(&part->free_blackboard);
+    part->blackboard_id = 0;
+    part->blackboard_num = 0;
+
     part->mm = NULL;
     part->idle_proc = NULL;
     part->scheduling = 0;

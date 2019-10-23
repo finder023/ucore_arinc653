@@ -68,6 +68,12 @@ typedef struct partition_type {
     int                 buffer_id;
     int                 buffer_num;
 
+    // blackboard
+    list_entry_t        all_blackboard;
+    list_entry_t        free_blackboard;
+    int                 blackboard_id;
+    int                 blackboard_num;
+
 } partition_t;
 
 #define le2part(le, member) \

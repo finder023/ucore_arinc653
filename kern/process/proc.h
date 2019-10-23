@@ -96,6 +96,8 @@ struct proc_struct {
 #define WT_PNORMAL          0x10    // wait until partition normal
 #define WT_QUEUE            0x20    // wait queuing port
 #define WT_BUFFER           0x40    // wait buffer
+#define WT_BBOARD           0x80    // wait for blackboard
+
 
 #define set_wt_flag(proc, flag)   ((proc)->wait_state |= (flag))
 #define clear_wt_flag(proc, flag)   ((proc)->wait_state &= ~(flag))

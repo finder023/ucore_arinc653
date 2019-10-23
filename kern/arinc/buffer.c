@@ -290,6 +290,7 @@ void do_send_buffer(
         timer_init(timer, current, time_out);
         add_timer(timer);
         set_wt_flag(current, WT_TIMER);
+        current->timer = timer;
         buffer->status.waiting_processes++;
 
         schedule();
@@ -405,6 +406,7 @@ void do_receive_buffer(
         timer_init(timer, current, time_out);
         add_timer(timer);
         set_wt_flag(current, WT_TIMER);
+        current->timer = timer;
 
         schedule();
 

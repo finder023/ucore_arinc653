@@ -8,6 +8,7 @@
 #include <sampling_port.h>
 #include <queuing_port.h>
 #include <buffer.h>
+#include <blackboard.h>
 
 int sys_exit(int error_code);
 int sys_fork(void);
@@ -201,6 +202,47 @@ void sys_get_buffer_status(
     buffer_status_t    *buffer_status,
     return_code_t      *return_code
 );
+
+// blackboard
+void sys_create_blackboard(
+    blackboard_name_t   blackboard_name,
+    message_size_t      max_message_size,
+    blackboard_id_t     *blackboard_id,
+    return_code_t       *return_code
+);
+
+void sys_display_blackboard(
+    blackboard_id_t blackboard_id,
+    message_addr_t  message_addr,
+    message_size_t  length,
+    return_code_t   *return_code
+);
+
+void sys_read_blackboard(
+    blackboard_id_t blackboard_id,
+    system_time_t   time_out,
+    message_addr_t  message_addr,
+    message_size_t  *length,
+    return_code_t   *return_code
+);
+
+void sys_clear_blackboard(
+    blackboard_id_t blackboard_id,
+    return_code_t   *return_code
+);
+
+void sys_get_blackboard_id(
+    blackboard_name_t   blackboard_name,
+    blackboard_id_t     *blackboard_id,
+    return_code_t       *return_code
+);
+
+void sys_get_blackboard_status(
+    blackboard_id_t     blackboard_id,
+    blackboard_status_t *blackboard_status,
+    return_code_t       *return_code
+);
+
 
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */

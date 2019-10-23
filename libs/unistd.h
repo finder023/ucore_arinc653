@@ -83,8 +83,15 @@
 #define SYS_getbufferid             78
 #define SYS_getbufferstatus         79
 
-/* OLNY FOR LAB6 */
-#define SYS_lab6_set_priority 255
+// blackboard
+#define SYS_createblackboard        80
+#define SYS_displayblackboard       81
+#define SYS_readblackboard          82
+#define SYS_clearblackboard         83
+#define SYS_getblackboardid         84
+#define SYS_getblackboardstatus     85
+
+
 
 /* SYS_fork flags */
 #define CLONE_VM            0x00000100  // set if VM shared between processes

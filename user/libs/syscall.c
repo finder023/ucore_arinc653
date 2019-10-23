@@ -81,11 +81,6 @@ sys_gettime(void) {
     return syscall(SYS_gettime);
 }
 
-void
-sys_lab6_set_priority(uint32_t priority)
-{
-    syscall(SYS_lab6_set_priority, priority);
-}
 
 int
 sys_sleep(unsigned int time) {
@@ -403,4 +398,61 @@ void sys_get_buffer_status(
     return_code_t      *return_code)
 {
     syscall(SYS_getbufferstatus, buffer_id, buffer_status, return_code);
+}
+
+
+// blackboard
+void sys_create_blackboard(
+    blackboard_name_t   blackboard_name,
+    message_size_t      max_message_size,
+    blackboard_id_t     *blackboard_id,
+    return_code_t       *return_code)
+{
+    syscall(SYS_createblackboard, blackboard_name, max_message_size,
+        blackboard_id, return_code);
+}
+
+void sys_display_blackboard(
+    blackboard_id_t blackboard_id,
+    message_addr_t  message_addr,
+    message_size_t  length,
+    return_code_t   *return_code)
+{
+    syscall(SYS_displayblackboard, blackboard_id, message_addr, length,
+        return_code);
+}
+
+void sys_read_blackboard(
+    blackboard_id_t blackboard_id,
+    system_time_t   time_out,
+    message_addr_t  message_addr,
+    message_size_t  *length,
+    return_code_t   *return_code)
+{
+    syscall(SYS_readblackboard, blackboard_id, time_out, message_addr,
+        length, return_code);
+}
+
+void sys_clear_blackboard(
+    blackboard_id_t blackboard_id,
+    return_code_t   *return_code)
+{
+    syscall(SYS_clearblackboard, blackboard_id, return_code);
+}
+
+void sys_get_blackboard_id(
+    blackboard_name_t   blackboard_name,
+    blackboard_id_t     *blackboard_id,
+    return_code_t       *return_code)
+{
+    syscall(SYS_getblackboardid, blackboard_name, blackboard_id, return_code);
+}
+
+void sys_get_blackboard_status(
+    blackboard_id_t     blackboard_id,
+    blackboard_status_t *blackboard_status,
+    return_code_t       *return_code)
+{
+    syscall(SYS_getblackboardstatus, blackboard_id, blackboard_status,
+        return_code);
 }

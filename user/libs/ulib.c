@@ -9,6 +9,7 @@
 #include <sampling_port.h>
 #include <queuing_port.h>
 #include <buffer.h>
+#include <blackboard.h>
 
 void
 exit(int error_code) {
@@ -58,11 +59,6 @@ gettime_msec(void) {
     return (unsigned int)sys_gettime();
 }
 
-void
-lab6_set_priority(uint32_t priority)
-{
-    sys_lab6_set_priority(priority);
-}
 
 int
 sleep(unsigned int time) {
@@ -335,7 +331,7 @@ void create_buffer(
 }
 
 
-void do_send_buffer(
+void send_buffer(
     buffer_id_t    buffer_id,
     message_addr_t message_addr,
     message_size_t length,
@@ -345,7 +341,7 @@ void do_send_buffer(
     sys_send_buffer(buffer_id, message_addr, length, time_out, return_code);
 }
 
-void do_receive_buffer(
+void receive_buffer(
     buffer_id_t    buffer_id,
     system_time_t  time_out,
     message_addr_t message_addr,
@@ -355,7 +351,7 @@ void do_receive_buffer(
     sys_receive_buffer(buffer_id, time_out, message_addr, length, return_code);
 }
 
-void do_get_buffer_id(
+void get_buffer_id(
     buffer_name_t  buffer_name,
     buffer_id_t    *buffer_id,
     return_code_t  *return_code )
@@ -363,10 +359,64 @@ void do_get_buffer_id(
     sys_get_buffer_id(buffer_name, buffer_id, return_code);
 }
 
-void do_get_buffer_status(
+void get_buffer_status(
     buffer_id_t        buffer_id,
     buffer_status_t    *buffer_status,
     return_code_t      *return_code)
 {
     sys_get_buffer_status(buffer_id, buffer_status, return_code);
+}
+
+
+void create_blackboard(
+    blackboard_name_t   blackboard_name,
+    message_size_t      max_message_size,
+    blackboard_id_t     *blackboard_id,
+    return_code_t       *return_code)
+{
+    sys_create_blackboard(blackboard_name, max_message_size, blackboard_id,
+        return_code);
+}
+
+void display_blackboard(
+    blackboard_id_t blackboard_id,
+    message_addr_t  message_addr,
+    message_size_t  length,
+    return_code_t   *return_code)
+{
+    sys_display_blackboard(blackboard_id, message_addr, length, return_code);
+}
+
+void read_blackboard(
+    blackboard_id_t blackboard_id,
+    system_time_t   time_out,
+    message_addr_t  message_addr,
+    message_size_t  *length,
+    return_code_t   *return_code)
+{
+    sys_read_blackboard(blackboard_id, time_out, message_addr, length,
+        return_code);
+}
+
+void clear_blackboard(
+    blackboard_id_t blackboard_id,
+    return_code_t   *return_code)
+{
+    sys_clear_blackboard(blackboard_id, return_code);
+}
+
+void get_blackboard_id(
+    blackboard_name_t   blackboard_name,
+    blackboard_id_t     *blackboard_id,
+    return_code_t       *return_code)
+{
+    sys_get_blackboard_id(blackboard_name, blackboard_id, return_code);
+}
+
+void get_blackboard_status(
+    blackboard_id_t     blackboard_id,
+    blackboard_status_t *blackboard_status,
+    return_code_t       *return_code)
+{
+    sys_get_blackboard_status(blackboard_id, blackboard_status, return_code);
 }

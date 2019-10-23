@@ -32,7 +32,6 @@ int kill(int pid);
 int getpid(void);
 void print_pgdir(void);
 unsigned int gettime_msec(void);
-void lab6_set_priority(uint32_t priority);
 int sleep(unsigned int time);
 
 int get_partition_id(void);

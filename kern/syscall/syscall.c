@@ -14,6 +14,7 @@
 #include <sampling_port.h>
 #include <queuing_port.h>
 #include <buffer.h>
+#include <blackboard.h>
 
 
 static int
@@ -317,23 +318,31 @@ static int sys_time_wait(uint32_t arg[]) {
     system_time_t delay_time = arg[0];
     return_code_t *return_code = (return_code_t *)arg[1];
     do_time_wait(delay_time, return_code);
+    
+    return *return_code;
 }
 
 static int sys_periodic_wait(uint32_t arg[]) {
     return_code_t *return_code = (return_code_t*)arg[0];
     do_periodic_wait(return_code);
+
+    return *return_code;
 }
 
 static int sys_get_time(uint32_t arg[]) {
-    system_time_t *system_time = arg[0];
+    system_time_t *system_time = (system_time_t*)arg[0];
     return_code_t *return_code = (return_code_t*)arg[1];
     do_get_time(system_time, return_code);
+
+    return *return_code;
 }
 
 static int sys_replenish(uint32_t arg[]) {
     system_time_t budget_time = arg[0];
     return_code_t *return_code = (return_code_t*)arg[1];
     do_replenish(budget_time, return_code);
+
+    return *return_code;
 } 
 
 // sampling port
@@ -518,6 +527,71 @@ static int sys_get_buffer_status(uint32_t arg[]) {
     return *return_code;
 }
 
+// blackboard
+static int sys_create_blackboard(uint32_t arg[]) {
+    blackboard_name_t   blackboard_name;
+    strcpy(blackboard_name, (char*)arg[0]);
+    message_size_t      max_message_size = arg[1];
+    blackboard_id_t     *blackboard_id = (blackboard_id_t*)arg[2];
+    return_code_t       *return_code = (return_code_t*)arg[3];
+
+    do_create_blackboard(blackboard_name, max_message_size, blackboard_id,
+        return_code);
+    return *return_code;
+}
+
+static int sys_display_blackboard(uint32_t arg[]) {
+    blackboard_id_t blackboard_id = arg[0];
+    message_addr_t  message_addr = (message_addr_t)arg[1];
+    message_size_t  length = arg[2];
+    return_code_t   *return_code = (return_code_t*)arg[3];
+
+    do_display_blackboard(blackboard_id, message_addr, length, return_code);
+    return *return_code;
+}
+
+
+static int sys_read_blackboard(uint32_t arg[]) {
+    blackboard_id_t blackboard_id = arg[0];
+    system_time_t   time_out = arg[1];
+    message_addr_t  message_addr = (message_addr_t)arg[2];
+    message_size_t  *length = (message_size_t*)arg[3];
+    return_code_t   *return_code = (return_code_t*)arg[4];
+
+    do_read_blackboard(blackboard_id, time_out, message_addr, length, 
+        return_code);
+
+    return *return_code;
+}
+
+static int sys_clear_blackboard(uint32_t arg[]) {
+    blackboard_id_t blackboard_id = arg[0];
+    return_code_t   *return_code = (return_code_t*)arg[1];
+
+    do_clear_blackboard(blackboard_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_blackboard_id(uint32_t arg[]) {
+    blackboard_name_t   blackboard_name;
+    strcpy(blackboard_name, (char*)arg[0]);
+    blackboard_id_t     *blackboard_id = (blackboard_id_t*)arg[1];
+    return_code_t       *return_code = (return_code_t*)arg[2];
+
+    do_get_blackboard_id(blackboard_name, blackboard_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_blackboard_status(uint32_t arg[]) {
+    blackboard_id_t     blackboard_id = arg[0];
+    blackboard_status_t *blackboard_status = (blackboard_status_t*)arg[1];
+    return_code_t       *return_code = (return_code_t*)arg[2];
+
+    do_get_blackboard_status(blackboard_id, blackboard_status, return_code);
+    return *return_code;
+}
+
+
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -579,6 +653,12 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_receivebuffer]         sys_receive_buffer,
     [SYS_getbufferid]           sys_get_buffer_id,
     [SYS_getbufferstatus]       sys_get_buffer_status,
+    [SYS_createblackboard]      sys_create_blackboard,
+    [SYS_displayblackboard]     sys_display_blackboard,
+    [SYS_readblackboard]        sys_read_blackboard,
+    [SYS_clearblackboard]       sys_clear_blackboard,
+    [SYS_getblackboardid]       sys_get_blackboard_id,
+    [SYS_getblackboardstatus]   sys_get_blackboard_status,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))
