@@ -38,6 +38,12 @@ static partition_t *alloc_partition(void) {
     part->event_id = 0;
     part->event_num = 0;
 
+    // buffer init
+    list_init(&part->all_buffer);
+    list_init(&part->free_buffer);
+    part->buffer_id = 0;
+    part->buffer_num = 0;
+
     part->mm = NULL;
     part->idle_proc = NULL;
     part->scheduling = 0;
@@ -118,7 +124,7 @@ void check_timeout(partition_t *part) {
     bool intr_state;
 
     while (le != &part->timeout_set) {
-        proc = le2proc(le, state_link);
+        proc = le2proc(le, run_link);
         if (proc->timeout_deadline < ticks) {
             local_intr_save(intr_state);
             {

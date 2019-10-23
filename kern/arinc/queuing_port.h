@@ -4,6 +4,7 @@
 #include <apex.h>
 #include <defs.h>
 #include <list.h>
+#include <message.h>
 
 #define MAX_NUMBER_OF_QUEUING_PORTS SYSTEM_LIMIT_NUMBER_OF_QUEUING_PORTS
 
@@ -22,14 +23,6 @@ typedef struct {
 } QUEUING_PORT_STATUS_TYPE;
 
 typedef QUEUING_PORT_STATUS_TYPE queuing_port_status_t;
-
-typedef struct message_type {
-    size_t          length;
-    list_entry_t    msg_link;
-    void            *buff;
-} message_t;
-
-#define le2msg(le, member)  (to_struct(le, message_t, member))
 
 
 typedef struct queuing_port_type {

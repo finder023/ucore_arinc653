@@ -13,15 +13,10 @@ static void test_thread(void) {
     while (1) {
         int pid = getpid();
         int ppid = get_partition_id();
-//        cprintf("this is part %d, thread %d.\n", pid, ppid);
         ++count;
         if (count % freq == 0) {
             count = 0;        
-            //cprintf("this is user process: %d, created by "
-            //"create_process in partition: %d.\n", pid, ppid);
             cprintf("this is user process %d, in partition %d\n", pid, ppid);
-        // cprintf("thread stack addr, &pid: %u, &ppid: %u.\n", 
-        //            (uintptr_t)&pid, (uintptr_t)&ppid);
         }
     }
 }
@@ -178,7 +173,8 @@ int main(void) {
     
     cprintf("this is process: %d, partition: %d\n", pid, ppid);
 
-    test_queuing_port();    
+    test_queuing_port();
+    test_sampling_port();
 
     sampling_port_id_t spid;
     create_sampling_port("sample1", 200, SOURCE, 200, &spid, &ret);

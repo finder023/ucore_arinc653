@@ -13,6 +13,7 @@
 #include <arinc_time.h>
 #include <sampling_port.h>
 #include <queuing_port.h>
+#include <buffer.h>
 
 
 static int
@@ -460,6 +461,62 @@ static int sys_clear_queuing_port(uint32_t arg[]) {
     return *return_code;
 }
 
+// buffer
+static int sys_create_buffer(uint32_t arg[]) {
+    buffer_name_t buffer_name;
+    strcpy(buffer_name, (char*)arg[0]);
+    message_size_t max_message_size = arg[1];
+    message_range_t max_nb_message = arg[2];
+    queuing_discipline_t queuing_discipline = (queuing_discipline_t)arg[3];
+    buffer_id_t *buffer_id = (buffer_id_t*)arg[4];
+    return_code_t return_code;
+
+    do_create_buffer(buffer_name, max_message_size, max_nb_message,
+        queuing_discipline, buffer_id, &return_code);
+    return return_code;
+}
+
+
+static int sys_send_buffer(uint32_t arg[]) {
+    buffer_id_t    buffer_id = arg[0];
+    message_addr_t message_addr = (message_addr_t)arg[1];
+    message_size_t length = arg[2];
+    system_time_t  time_out = arg[3];
+    return_code_t  *return_code = (return_code_t*)arg[4];
+
+    do_send_buffer(buffer_id, message_addr, length, time_out, return_code);
+    return *return_code;
+}
+
+static int sys_receive_buffer(uint32_t arg[]) {
+    buffer_id_t    buffer_id = arg[0];
+    system_time_t  time_out = arg[1];
+    message_addr_t message_addr = (message_addr_t)arg[2];
+    message_size_t *length = (message_size_t*)arg[3];
+    return_code_t  *return_code = (return_code_t*)arg[4];
+
+    do_receive_buffer(buffer_id, time_out, message_addr, length, return_code);
+    return *return_code;
+}
+
+static int sys_get_buffer_id(uint32_t arg[]) {
+    buffer_name_t  buffer_name;
+    strcpy(buffer_name, (char*)arg[0]);
+    buffer_id_t    *buffer_id = (buffer_id_t*)arg[1];
+    return_code_t  *return_code = (return_code_t*)arg[2];
+
+    do_get_buffer_id(buffer_name, buffer_id, return_code);
+    return *return_code;
+}
+
+static int sys_get_buffer_status(uint32_t arg[]) {
+    buffer_id_t        buffer_id = arg[0];
+    buffer_status_t    *buffer_status = (buffer_status_t*)arg[1];
+    return_code_t      *return_code = (return_code_t*)arg[2];
+
+    do_get_buffer_status(buffer_id, buffer_status, return_code);
+    return *return_code;
+}
 
 static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_exit]              sys_exit,
@@ -517,6 +574,11 @@ static int (*syscalls[])(uint32_t arg[]) = {
     [SYS_getqueuingportid]      sys_get_queuing_port_id,
     [SYS_getqueuingportstatus]  sys_get_queuing_port_status,
     [SYS_clearqueuingport]      sys_clear_queuing_port,
+    [SYS_createbuffer]          sys_create_buffer,
+    [SYS_sendbuffer]            sys_send_buffer,
+    [SYS_receivebuffer]         sys_receive_buffer,
+    [SYS_getbufferid]           sys_get_buffer_id,
+    [SYS_getbufferstatus]       sys_get_buffer_status,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

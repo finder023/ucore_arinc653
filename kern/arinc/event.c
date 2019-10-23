@@ -126,13 +126,11 @@ void do_set_event(event_id_t event_id, return_code_t *return_code) {
     while (!list_empty(&event->waiting_thread)) {
         le = event->waiting_thread.next;
         list_del_init(le);
-        proc = le2proc(le, state_link);
+        proc = le2proc(le, run_link);
         if (proc->timer != NULL) {
             del_timer(proc->timer);
             clear_wt_flag(proc, WT_TIMER);
         }
-
-        proc->status.process_state = READY;
         clear_wt_flag(proc, WT_EVENT);
         wakeup_proc(proc);
     }
@@ -187,7 +185,7 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
         proc->status.process_state = WAITTING;
         set_wt_flag(proc, WT_EVENT);
         list_del_init(&proc->run_link);
-        list_add_before(&event->waiting_thread, &proc->state_link);
+        list_add_before(&event->waiting_thread, &proc->run_link);
 
         local_intr_restore(old_intr);
         schedule();        
@@ -198,7 +196,7 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
         proc->status.process_state = WAITTING;
         set_wt_flag(proc, WT_TIMER | WT_EVENT);
         list_del_init(&proc->run_link);
-        list_add_after(&event->waiting_thread, &proc->state_link);
+        list_add_after(&event->waiting_thread, &proc->run_link);
 
         timer_t *timer = kmalloc(sizeof(timer));
         timer_init(timer, proc, time_out);

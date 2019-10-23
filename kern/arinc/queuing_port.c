@@ -25,30 +25,6 @@ inline static queuing_port_id_t queuing_port_id_generator(void) {
     return ++_queuing_port_id;
 }
 
-static message_t *alloc_message(size_t max_size) {
-    message_t *msg = kmalloc(sizeof(message_t));
-    if (msg == NULL) {
-        return NULL;
-    }
-
-    list_init(&msg->msg_link);
-    msg->buff = kmalloc(max_size);
-    if (msg->buff == NULL) {
-        kfree(msg);
-        return NULL;
-    }
-
-    return msg;
-}
-
-static void free_message(message_t *msg) {
-    if (!msg)
-        return;
-
-    list_del(&msg->msg_link); 
-    kfree(msg->buff);
-    kfree(msg);
-}
 
 static queuing_port_t* alloc_queuing_port(size_t max_size) {
     queuing_port_t *queue;
@@ -239,6 +215,7 @@ void do_create_queuing_port(queuing_port_name_t name, message_size_t max_msg_siz
     queue->status.waiting_process = 0;
     strcpy(queue->name, name);
 
+    *id = queue->id;
     *return_code = NO_ERROR;
 }
 

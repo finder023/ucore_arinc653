@@ -6,6 +6,8 @@
 #include <semaphore.h>
 #include <sampling_port.h>
 #include <queuing_port.h>
+#include <buffer.h>
+
 
 #define MAX_ARGS            5
 
@@ -351,3 +353,54 @@ void sys_clear_queuing_port(queuing_port_id_t id, return_code_t *return_code)
     syscall(SYS_clearqueuingport, id, return_code);
 }
 
+// buffer
+void sys_create_buffer(
+    buffer_name_t      buffer_name,
+    message_size_t     max_message_size,
+    message_range_t    max_nb_message,
+    queuing_discipline_t   queuing_discipline,
+    buffer_id_t        *buffer_id,
+    return_code_t      *return_code)
+{
+    syscall(SYS_createbuffer, buffer_name, max_message_size, max_nb_message,
+        queuing_discipline, buffer_id, return_code);
+}
+
+
+void sys_send_buffer(
+    buffer_id_t    buffer_id,
+    message_addr_t message_addr,
+    message_size_t length,
+    system_time_t  time_out,
+    return_code_t  *return_code)
+{
+    syscall(SYS_sendbuffer, buffer_id, message_addr, length, time_out,
+        return_code);
+}
+
+void sys_receive_buffer(
+    buffer_id_t    buffer_id,
+    system_time_t  time_out,
+    message_addr_t message_addr,
+    message_size_t *length,
+    return_code_t  *return_code)
+{
+    syscall(SYS_receivebuffer, buffer_id, time_out, message_addr, length,
+        return_code);
+}
+
+void sys_get_buffer_id(
+    buffer_name_t  buffer_name,
+    buffer_id_t    *buffer_id,
+    return_code_t  *return_code)
+{
+    syscall(SYS_getbufferid, buffer_name, buffer_id, return_code);
+}
+
+void sys_get_buffer_status(
+    buffer_id_t        buffer_id,
+    buffer_status_t    *buffer_status,
+    return_code_t      *return_code)
+{
+    syscall(SYS_getbufferstatus, buffer_id, buffer_status, return_code);
+}

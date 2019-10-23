@@ -76,6 +76,12 @@
 #define SYS_getqueuingportstatus    73
 #define SYS_clearqueuingport        74
 
+// buffer
+#define SYS_createbuffer            75
+#define SYS_sendbuffer              76
+#define SYS_receivebuffer           77
+#define SYS_getbufferid             78
+#define SYS_getbufferstatus         79
 
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255

@@ -67,7 +67,6 @@ struct proc_struct {
     long    periodic_release;
     struct partition_type *part;
     list_entry_t    part_link;
-    list_entry_t    state_link;
     int             timeout_deadline;
     void            *timer;
     uintptr_t       ustack;
@@ -96,6 +95,7 @@ struct proc_struct {
 #define WT_EVENT            0x8     // wait event
 #define WT_PNORMAL          0x10    // wait until partition normal
 #define WT_QUEUE            0x20    // wait queuing port
+#define WT_BUFFER           0x40    // wait buffer
 
 #define set_wt_flag(proc, flag)   ((proc)->wait_state |= (flag))
 #define clear_wt_flag(proc, flag)   ((proc)->wait_state &= ~(flag))
