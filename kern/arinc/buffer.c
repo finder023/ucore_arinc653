@@ -228,6 +228,7 @@ void do_send_buffer(
     if (buffer->status.nb_message < buffer->status.max_nb_message) {
         if (list_empty(&buffer->waiting_thread)) {
             msg = alloc_message(buffer->status.max_message_size);
+            msg->length = length;
             memcpy(msg->buff, message_addr, length);
             list_add_before(&buffer->msg_set, &msg->msg_link);
             buffer->status.nb_message++;
@@ -238,6 +239,7 @@ void do_send_buffer(
             proc = le2proc(le, run_link);
 
             msg = alloc_message(buffer->status.max_message_size);
+            msg->length = length;
             memcpy(msg->buff, message_addr, length);
             list_add_after(&buffer->msg_set, &msg->msg_link);
             buffer->status.nb_message++;
@@ -274,6 +276,7 @@ void do_send_buffer(
 
         clear_wt_flag(current, WT_BUFFER);
         msg = alloc_message(buffer->status.max_message_size);
+        msg->length = length;
         memcpy(msg->buff, message_addr, length);
         list_add_after(&buffer->msg_set, &msg->msg_link);
         buffer->status.nb_message++;
@@ -307,6 +310,7 @@ void do_send_buffer(
             kfree(timer);
 
             msg = alloc_message(buffer->status.max_message_size);
+            msg->length = length;
             memcpy(msg->buff, message_addr, length);
             list_add_after(&buffer->msg_set, &msg->msg_link);
             buffer->status.nb_message++;
