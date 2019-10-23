@@ -75,6 +75,8 @@ static event_t *alloc_event(void) {
 
     return event;
 }
+
+
 void do_create_event(event_name_t event_name, event_id_t *event_id, return_code_t *return_code) {
     event_t *event;
     partition_t *part = current->part;
@@ -123,8 +125,8 @@ void do_set_event(event_id_t event_id, return_code_t *return_code) {
     list_entry_t *le;
     struct proc_struct *proc;
 
+    le = event->waiting_thread.next;
     while (!list_empty(&event->waiting_thread)) {
-        le = event->waiting_thread.next;
         list_del_init(le);
         proc = le2proc(le, run_link);
         if (proc->timer != NULL) {

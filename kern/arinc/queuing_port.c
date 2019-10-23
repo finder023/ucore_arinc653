@@ -39,6 +39,7 @@ static queuing_port_t* alloc_queuing_port(size_t max_size) {
         message_t *msg;
         while (le != &queue->msg_set) {
             msg = le2msg(le, msg_link);
+            list_del(le);
             le = list_next(le);
             free_message(msg);
         }
@@ -474,6 +475,7 @@ void do_clear_queuing_port(queuing_port_id_t id, return_code_t *return_code)
     message_t *msg;
 
     while (le != &queue->msg_set) {
+        list_del(le);
         msg = le2msg(le, msg_link);
         free_message(msg);
         le = list_next(le);
