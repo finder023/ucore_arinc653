@@ -276,7 +276,7 @@ void do_read_blackboard(
     }
 
     else if (time_out == INFINITE_TIME_VALUE) {
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         list_del_init(&current->run_link);
         list_add_before(&board->waiting_thread, &current->run_link);
         set_wt_flag(current, WT_BBOARD);
@@ -290,7 +290,7 @@ void do_read_blackboard(
         *return_code = NO_ERROR;
     }
     else {
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         list_del_init(&current->run_link);
         list_add_before(&board->waiting_thread, &current->run_link);
         set_wt_flag(current, WT_BBOARD);

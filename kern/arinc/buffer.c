@@ -266,7 +266,7 @@ void do_send_buffer(
         return;
     }
     else if (time_out == INFINITE_TIME_VALUE) {
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         list_del_init(&current->run_link);
         list_add_before(&buffer->waiting_thread, &current->run_link);
         set_wt_flag(current, WT_BUFFER);
@@ -284,7 +284,7 @@ void do_send_buffer(
         *return_code = NO_ERROR;
     }
     else {
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         list_del_init(&current->run_link);
         list_add_before(&buffer->waiting_thread, &current->run_link);
         set_wt_flag(current, WT_BUFFER);
@@ -378,7 +378,7 @@ void do_receive_buffer(
         *return_code = INVALID_MODE;
     }
     else if (time_out == INFINITE_TIME_VALUE) {
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         le = &current->run_link;
         list_del_init(le);
         list_add_before(&buffer->waiting_thread, le);
@@ -399,7 +399,7 @@ void do_receive_buffer(
         *return_code = NO_ERROR;
     }
     else {
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         le = &current->run_link;
         list_del_init(le);
         list_add_before(&buffer->waiting_thread, le);

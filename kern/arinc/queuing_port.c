@@ -293,7 +293,7 @@ void do_send_queuing_message(queuing_port_id_t id, message_addr_t msg_addr,
             set_wt_flag(current, WT_TIMER);
         }
 
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         list_del_init(&current->run_link);
         list_add_after(&queue->waitting_thread, &current->run_link);
         set_wt_flag(current, WT_QUEUE);
@@ -391,7 +391,7 @@ void do_receive_queuing_message(queuing_port_id_t id, system_time_t time_out,
             add_timer(timer);
             set_wt_flag(current, WT_TIMER);
         }
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         list_del_init(&current->run_link);
         list_add_after(&queue->waitting_thread, &current->run_link);
         set_wt_flag(current, WT_QUEUE);

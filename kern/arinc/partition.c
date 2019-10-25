@@ -193,7 +193,7 @@ void do_set_partition_mode(operating_mode_t mode, return_code_t *return_code) {
         while (le != &part->proc_set)
         {
             proc = le2proc(le, part_link);
-            if (proc->status.process_state == WAITTING && test_wt_flag(proc, WT_PNORMAL)) {
+            if (proc->status.process_state == WAITING && test_wt_flag(proc, WT_PNORMAL)) {
                 clear_wt_flag(proc, WT_PNORMAL);
                 list_del_init(&proc->run_link);
                 if (proc->wait_state == 0) {

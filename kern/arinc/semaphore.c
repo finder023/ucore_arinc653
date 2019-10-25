@@ -172,7 +172,7 @@ void do_wait_semaphore (
     }
     else if (time_out == INFINITE_TIME_VALUE) {
         pthread = current;
-        pthread->status.process_state = WAITTING;
+        pthread->status.process_state = WAITING;
         set_wt_flag(pthread, WT_KSEM);
         list_del_init(&pthread->run_link);
         sem->sem_status.waiting_processes += 1;
@@ -187,7 +187,7 @@ void do_wait_semaphore (
     else {
         // timeout > 0 and sem val = 0
         pthread = current;
-        pthread->status.process_state = WAITTING;
+        pthread->status.process_state = WAITING;
 
         timer_t *timer = kmalloc(sizeof(timer_t));
         timer_init(timer, pthread, time_out);

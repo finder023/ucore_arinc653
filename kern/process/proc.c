@@ -1158,7 +1158,7 @@ static int setup_ustack(struct proc_struct *proc) {
 //          return;
 //      }
 //  
-//      proc->status.process_state = WAITTING;
+//      proc->status.process_state = WAITING;
 //      if (proc->wait_state == 0 || proc->wait_state & WT_SUSPEND_TIMER) {
 //          list_del(&proc->state_link);
 //          list_add_after(&part->timeout_set, &proc->state_link);
@@ -1237,7 +1237,7 @@ void do_create_process(process_attribute_t *attr,
         return ;
     }
 
-    if (attr->period > MAX_PROC_PEROID) {
+    if (attr->period > MAX_PROC_PERIOD) {
         *return_code = INVALID_PARAM;
         return ;
     }
@@ -1343,7 +1343,7 @@ void do_suspend_self(uint32_t time_out, return_code_t *return_code) {
         *return_code = NO_ERROR;
     } else {
         struct proc_struct *proc = current;
-        proc->status.process_state = WAITTING;
+        proc->status.process_state = WAITING;
         list_del_init(&proc->run_link);
         set_wt_flag(proc, WT_TIMER | WT_SUSPEND);
         timer_t *timer;
@@ -1390,12 +1390,12 @@ void do_suspend(process_id_t process_id, return_code_t *return_code) {
         return;
     }
 
-    if (proc->status.process_state == WAITTING && proc->wait_state & WT_SUSPEND) {
+    if (proc->status.process_state == WAITING && proc->wait_state & WT_SUSPEND) {
         *return_code = NO_ACTION;
         return;
     } else {
         list_del_init(&proc->run_link);
-        proc->status.process_state = WAITTING;
+        proc->status.process_state = WAITING;
         set_wt_flag(proc, WT_SUSPEND);
     }
 }
@@ -1495,7 +1495,7 @@ void do_start(process_id_t process_id, return_code_t *return_code) {
                 schedule();
             }
         } else {
-            proc->status.process_state = WAITTING;
+            proc->status.process_state = WAITING;
             set_wt_flag(proc, WT_PNORMAL);
         }
         *return_code = NO_ERROR;   

@@ -14,7 +14,7 @@
 
 #define MAX_STACK_SIZE  (4096 * 20)
 
-#define MAX_PROC_PEROID 1000
+#define MAX_PROC_PERIOD 1000
 
 #define MAX_TIME_CAPA 1000
 
@@ -24,7 +24,7 @@ typedef enum {
     DORMANT = 0,
     READY = 1,
     RUNNING = 2,
-    WAITTING = 3
+    WAITING = 3
 } process_state_type;
 
 typedef enum {

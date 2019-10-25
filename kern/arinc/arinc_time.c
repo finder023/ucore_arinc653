@@ -28,7 +28,7 @@ void do_time_wait(system_time_t delay_time, return_code_t *return_code) {
     else {
         bool old_intr;
         local_intr_save(old_intr);
-        current->status.process_state = WAITTING;
+        current->status.process_state = WAITING;
         set_wt_flag(current, WT_TIMER);
         list_del_init(&current->run_link);
 
@@ -57,7 +57,7 @@ void do_periodic_wait(return_code_t *return_code) {
 
     bool old_intr;
     local_intr_save(old_intr);
-    current->status.process_state = WAITTING;
+    current->status.process_state = WAITING;
     set_wt_flag(current, WT_TIMER);
     list_del_init(&current->run_link);
 

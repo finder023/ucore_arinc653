@@ -184,7 +184,7 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
     }
     else if (time_out == INFINITE_TIME_VALUE) {
         proc = current;
-        proc->status.process_state = WAITTING;
+        proc->status.process_state = WAITING;
         set_wt_flag(proc, WT_EVENT);
         list_del_init(&proc->run_link);
         list_add_before(&event->waiting_thread, &proc->run_link);
@@ -195,7 +195,7 @@ void do_wait_event(event_id_t event_id, system_time_t time_out, return_code_t *r
         *return_code = NO_ERROR;
     } else {
         proc = current;
-        proc->status.process_state = WAITTING;
+        proc->status.process_state = WAITING;
         set_wt_flag(proc, WT_TIMER | WT_EVENT);
         list_del_init(&proc->run_link);
         list_add_after(&event->waiting_thread, &proc->run_link);

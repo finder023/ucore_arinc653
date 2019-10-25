@@ -16,7 +16,7 @@ typedef enum {
     DORMANT = 0,
     READY = 1,
     RUNNING = 2,
-    WAITTING = 3
+    WAITING = 3
 } process_state_type;
 
 typedef enum {
