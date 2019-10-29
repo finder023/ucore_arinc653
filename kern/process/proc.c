@@ -1212,350 +1212,317 @@ static void set_proc_link(struct proc_struct *proc) {
     part->proc_num++;
 }
 
-void do_create_process(process_attribute_t *attr, 
-                    process_id_t *pid,   
-                    return_code_t *return_code) 
-{
-    partition_t *part = current->part;
-    if (!valid_nr_proc()) {
-        *return_code = INVALID_CONFIG;
-        return ;
-    }
-
-    if (find_proc_name(attr->name) != NULL) {
-        *return_code = NO_ACTION;
-        return ;
-    }
-
-    if (attr->stack_size > MAX_STACK_SIZE) {
-        *return_code = INVALID_PARAM;
-        return ;
-    }
-
-    if (attr->base_priority > MAX_PRIORITY_VALUE) {
-        *return_code = INVALID_PARAM;
-        return ;
-    }
-
-    if (attr->period > MAX_PROC_PERIOD) {
-        *return_code = INVALID_PARAM;
-        return ;
-    }
-
-    if (attr->time_capacity > MAX_TIME_CAPA) {
-        *return_code = INVALID_PARAM;
-        return ;
-    }
-
-    if (part->status.operating_mode == NORMAL) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    // operating mode
-    struct proc_struct *proc;
-    // alloc proc and pid
-    if ((proc = alloc_proc()) == NULL) {
-        *return_code = INVALID_CONFIG; 
-        return ;
-    }
-    proc->status.attributes = *attr;
-    proc->part = current->part;
-
-    // set up user and kernel stack
-    if (setup_ustack(proc) != 0) {
-        *return_code = INVALID_CONFIG;
-        kfree(proc);
-        return;
-    }
-    cprintf("stack_addr: %x.\n", proc->ustack);
-    // assert(user_mem_check(current->mm, stack, stack_size, 1));
-
-    if (setup_kstack(proc) != 0) {
-        *return_code = INVALID_CONFIG;
-        do_munmap(proc->ustack, attr->stack_size);
-        kfree(proc);
-        return;
-    }
-
-    init_proc_context(proc);
-
-    // set mm
+static void set_mm(struct proc_struct *proc) {
     struct mm_struct *mm = current->mm;
     mm_count_inc(mm);
     proc->mm = mm;
     proc->cr3 = PADDR(mm->pgdir);
-
-    set_proc_link(proc);
-
-    proc->status.process_state = DORMANT; 
-    *pid = proc->pid;
-    *return_code = NO_ERROR;
-    return;
 }
 
 
-void do_set_priority(process_id_t process_id,
-                    uint8_t priority,
-                    return_code_t *return_code) {
-    struct proc_struct *proc = find_proc(process_id);
-    if (proc == NULL) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-
-    if (priority > MAX_PRIORITY_VALUE) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-
-    if (proc->status.process_state == DORMANT) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    proc->status.current_priority = priority;
-    if (PREEMPTION) {
-        schedule();
-    }
-
-    *return_code = NO_ERROR;
+void do_delayed_start(process_id_t process_id,
+                    system_time_t delay_time,
+                    return_code_t *return_code)
+{
 
 }
 
-void do_suspend_self(uint32_t time_out, return_code_t *return_code) {
-    if (!PREEMPTION) {
-        *return_code = INVALID_MODE;
-        return;
-    }
 
-    if (time_out > MAX_TIME_OUT) {
+
+
+void do_resume( process_id_t process_id, return_code_t* return_code) {
+
+    struct proc_struct* proc = find_proc(process_id);
+    if ( proc == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    if (current->status.attributes.period == INFINITE_TIME_VALUE) {
+    if ( proc->status.process_state == DORMANT ) {
         *return_code = INVALID_MODE;
         return;
     }
-
-    if (time_out == 0) {
-        *return_code = NO_ERROR;
-    } else {
-        struct proc_struct *proc = current;
-        proc->status.process_state = WAITING;
-        list_del_init(&proc->run_link);
-        set_wt_flag(proc, WT_TIMER | WT_SUSPEND);
-        timer_t *timer;
-        if (time_out != INFINITE_TIME_VALUE) {
-            timer = kmalloc(sizeof(timer_t));
-            timer_init(timer, current, time_out);
-            add_timer(timer);
-            current->timer = timer;
-            // proc_add_timeout(current, time_out);
-        }
-
-        schedule();
+    if ( proc->status.attributes.period != INFINITE_TIME_VALUE ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    if ( test_wt_flag(proc, WT_SUSPEND) == 0 ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    if ( test_wt_flag(proc, WT_SUSPEND) != 0 && test_wt_flag(proc, WT_SUSPEND) != 0 ) {
+        // stop_timer
+        timer_t *timer = proc->timer;
+        del_timer(timer);
+        clear_wt_flag(proc, WT_TIMER);
         kfree(timer);
-        if (proc->timer == NULL) {
-            *return_code = TIMED_OUT;
-            return;
-        } else {
-            proc->timer = NULL;
-            *return_code = NO_ERROR;
-            return;
-        }
     }
-}
-            
-void do_suspend(process_id_t process_id, return_code_t *return_code) {
-    if (!PREEMPTION) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    struct proc_struct *proc = find_proc(process_id);
-    if (proc == NULL || proc == current) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-
-    if (proc->status.process_state == DORMANT) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    if (proc->status.attributes.period != INFINITE_TIME_VALUE) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    if (proc->status.process_state == WAITING && proc->wait_state & WT_SUSPEND) {
-        *return_code = NO_ACTION;
-        return;
-    } else {
-        list_del_init(&proc->run_link);
-        proc->status.process_state = WAITING;
-        set_wt_flag(proc, WT_SUSPEND);
-    }
-}
-
-void do_resume(process_id_t process_id, return_code_t *return_code) {
-    struct proc_struct *proc = find_proc(process_id);
-    if (proc == NULL) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-
-    if (proc->status.process_state == DORMANT) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    if (proc->status.attributes.period != INFINITE_TIME_VALUE) {
-        *return_code = INVALID_MODE;
-        return;
-    }
-
-    if (!test_wt_flag(proc, WT_SUSPEND)) {
-        *return_code = NO_ACTION;
-        return;
-    }
-
-    if (test_wt_flag(proc, WT_SUSPEND) && test_wt_flag(proc, WT_TIMER)) {
-        // do not set proc->timer to NULL
-        del_timer(proc->timer);
-    }
-    // TODO
-    if (!test_wt_flag(proc, WT_KSEM) && !test_wt_flag(proc, WT_EVENT)) {
-        proc->status.process_state = READY;
+    clear_wt_flag(proc, WT_SUSPEND);
+    if ( proc->wait_state == 0 ) {
         wakeup_proc(proc);
-        if (PREEMPTION) {
+        if ( PREEMPTION != 0 ) {
             schedule();
         }
     }
     *return_code = NO_ERROR;
 }
 
-void do_stop_self(void) {
-    current->status.process_state = DORMANT;
-    list_del_init(&current->run_link);
-    list_add_after(&current->part->dormant_set, &current->run_link);
-    schedule();
-}
+void do_get_process_status( process_id_t process_id, process_status_t* process_status, return_code_t* return_code) {
 
-void do_stop(process_id_t process_id, return_code_t *return_code) {
-    struct proc_struct *proc = find_proc(process_id);
-    if (proc == NULL) {
+    struct proc_struct* proc = find_proc(process_id);
+    if ( proc == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    if (proc->status.process_state == DORMANT) {
-        *return_code = NO_ACTION;
-        return;
-    }
-
-    proc->status.process_state = DORMANT;
-    list_del_init(&proc->run_link);
-    if (proc->wait_state != 0) {
-        if (test_wt_flag(proc, WT_TIMER)) {
-            del_timer(proc->timer);
-            kfree(proc->timer);
-            proc->timer = NULL;
-        }
-        proc->wait_state = 0;
-    }
+    *process_status = proc->status;
     *return_code = NO_ERROR;
 }
 
-void do_start(process_id_t process_id, return_code_t *return_code) {
-    struct proc_struct *proc = find_proc(process_id);
-    if (proc == NULL) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
+void do_create_process( process_attribute_t* attr, process_id_t* pid, return_code_t* return_code) {
 
-    if (proc->status.process_state != DORMANT) {
-        *return_code = NO_ACTION;
-        return;
-    }
-
-    if (proc->status.attributes.period == INFINITE_TIME_VALUE) {
-        proc->status.current_priority = proc_baseproi(proc);
-        // reset context and stack
-        init_proc_context(proc);
-        partition_t *part = proc->part;
-        if (part->status.operating_mode == NORMAL) {
-            proc->status.process_state = READY;
-            proc->time_slice = proc->status.attributes.time_capacity;
-            list_del_init(&proc->run_link);
-            wakeup_proc(proc);
-            if (PREEMPTION) {
-                schedule();
-            }
-        } else {
-            proc->status.process_state = WAITING;
-            set_wt_flag(proc, WT_PNORMAL);
-        }
-        *return_code = NO_ERROR;   
-    }
-}
-
-void do_delayed_start(process_id_t process_id,
-                    system_time_t delay_time,
-                    return_code_t *return_code) {
-
-                    }
-
-void do_lock_preemption(lock_level_t *lock_level, return_code_t *return_code) {
-    partition_t *part = current->part;
-    if (part->status.operating_mode != NORMAL) {
-        *return_code = NO_ACTION;
-        return;
-    }
-
-    if (part->status.lock_level > MAX_LOCK_LEVEL) {
+    partition_t* part = current->part;
+    if ( valid_nr_proc() == 0 ) {
         *return_code = INVALID_CONFIG;
         return;
     }
-
-    part->status.lock_level += 1;
-    *lock_level = part->status.lock_level;
-
-    // lock level
-    *return_code = NO_ERROR;
-    return;
-}
-
-void do_unlock_preemption(lock_level_t *lock_level, return_code_t *return_code) {
-    partition_t *part = current->part;
-
-    if (part->status.operating_mode != NORMAL || part->status.lock_level == 0) {
+    if ( find_proc_name(attr->name) != NULL ) {
         *return_code = NO_ACTION;
         return;
     }
-
-    part->status.lock_level -= 1;
-    if (part->status.lock_level == 0) {
-        *lock_level = 0;
-        schedule();
+    if ( attr->stack_size > MAX_STACK_SIZE ) {
+        *return_code = INVALID_PARAM;
+        return;
     }
-    *lock_level = part->status.lock_level;
-    *return_code = NO_ERROR;
-}
-
-void do_get_my_id(process_id_t *process_id, return_code_t *return_code) {
-    *process_id = current->pid;
+    if ( attr->base_priority > MAX_PRIORITY_VALUE ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( attr->period > MAX_PROC_PERIOD ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( attr->time_capacity > MAX_TIME_CAPA ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( part->status.operating_mode == NORMAL ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    struct proc_struct* proc = alloc_proc();
+    if ( proc == NULL ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
+    proc->status.attributes = *attr;
+    proc->part = current->part;
+    if ( setup_ustack(proc) != 0 ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
+    if ( setup_kstack(proc) != 0 ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
+    init_proc_context(proc);
+    set_proc_link(proc);
+    set_mm(proc);
+    proc->status.process_state = DORMANT;
+    *pid = proc->pid;
     *return_code = NO_ERROR;
     return;
 }
 
-void do_get_process_id(process_name_t  process_name,
-                    process_id_t    *process_id,
-                    return_code_t   *return_code) {
-    struct proc_struct *proc = find_proc_name(process_name);
-    if (proc == NULL) {
+void do_stop_self( ) {
+
+    struct proc_struct* proc = current;
+    // set_proc_dormant
+    proc->status.process_state = DORMANT;
+    list_del_init(&proc->run_link);
+    list_add_before(&proc->part->dormant_set, &proc->run_link);
+    schedule();
+}
+
+void do_lock_preemption( lock_level_t* lock_level, return_code_t* return_code) {
+
+    partition_t* part = current->part;
+    if ( part->status.operating_mode != NORMAL ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    if ( part->status.lock_level > MAX_LOCK_LEVEL ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
+    part->status.lock_level = part->status.lock_level + 1;
+    *lock_level = part->status.lock_level;
+    *return_code = NO_ERROR;
+}
+
+void do_start( process_id_t process_id, return_code_t* return_code) {
+
+    struct proc_struct* proc = find_proc(process_id);
+    if ( proc == NULL ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( proc->status.process_state != DORMANT ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    if ( proc->status.attributes.period == INFINITE_TIME_VALUE ) {
+        proc->status.current_priority = proc->status.attributes.base_priority;
+        init_proc_context(proc);
+        partition_t* part = proc->part;
+        if ( part->status.operating_mode == NORMAL ) {
+            proc->time_slice = proc->status.attributes.time_capacity;
+            wakeup_proc(proc);
+            if ( PREEMPTION != 0 ) {
+                schedule();
+            }
+        }
+        else {
+            // set_proc_waiting
+            proc->status.process_state = WAITING;
+            list_del_init(&proc->run_link);
+            set_wt_flag(proc, WT_PNORMAL);
+        }
+    }
+    *return_code = NO_ERROR;
+}
+
+void do_get_my_id( process_id_t* process_id, return_code_t* return_code) {
+
+    *process_id = current->pid;
+    *return_code = NO_ERROR;
+}
+
+void do_suspend_self( system_time_t time_out, return_code_t* return_code) {
+
+    if ( PREEMPTION == 0 ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    if ( time_out > MAX_TIME_OUT ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    if ( current->status.attributes.period == INFINITE_TIME_VALUE ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    if ( time_out == 0 ) {
+        *return_code = NO_ERROR;
+        return;
+    }
+    else {
+        struct proc_struct* proc = current;
+        // set_proc_waiting
+        proc->status.process_state = WAITING;
+        list_del_init(&proc->run_link);
+        set_wt_flag(proc, WT_SUSPEND);
+        if ( time_out != INFINITE_TIME_VALUE ) {
+            // add_timer
+            timer_t *timer = kmalloc(sizeof(timer_t));
+            timer_init(timer, proc, time_out);
+            set_wt_flag(proc, WT_TIMER);
+            add_timer(timer);
+            proc->timer = timer;
+        }
+        schedule();
+        if ( proc->timer == NULL ) {
+            *return_code = TIMED_OUT;
+            return;
+        }
+        else {
+            proc->timer = NULL;
+            *return_code = NO_ERROR;
+            return;
+        }
+    }
+}
+
+void do_suspend( process_id_t process_id, return_code_t* return_code) {
+
+    if ( PREEMPTION != 1 ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    struct proc_struct* proc = find_proc(process_id);
+    if ( proc == NULL || proc == current ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( proc->status.process_state == DORMANT ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    if ( proc->status.attributes.period != INFINITE_TIME_VALUE ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_SUSPEND) ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    else {
+        // set_proc_waiting
+        proc->status.process_state = WAITING;
+        list_del_init(&proc->run_link);
+        set_wt_flag(proc, WT_SUSPEND);
+    }
+}
+
+void do_stop( process_id_t process_id, return_code_t* return_code) {
+
+    struct proc_struct* proc = find_proc(process_id);
+    if ( proc == NULL ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( proc->status.process_state == DORMANT ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    // set_proc_dormant
+    proc->status.process_state = DORMANT;
+    list_del_init(&proc->run_link);
+    list_add_before(&proc->part->dormant_set, &proc->run_link);
+    if ( test_wt_flag(proc, WT_TIMER) ) {
+        // stop_timer
+        timer_t *timer = proc->timer;
+        del_timer(timer);
+        clear_wt_flag(proc, WT_TIMER);
+        kfree(timer);
+    }
+    *return_code = NO_ERROR;
+}
+
+void do_set_priority( process_id_t process_id, priority_t priority, return_code_t* return_code) {
+
+    struct proc_struct* proc = find_proc(process_id);
+    if ( proc == NULL ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( priority > MAX_PRIORITY_VALUE ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( proc->status.process_state == DORMANT ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    proc->status.current_priority = priority;
+    if ( PREEMPTION == 1 ) {
+        schedule();
+    }
+    *return_code = NO_ERROR;
+}
+
+void do_get_process_id( process_name_t process_name, process_id_t* process_id, return_code_t* return_code) {
+
+    struct proc_struct* proc = find_proc_name(process_name);
+    if ( proc == NULL ) {
         *return_code = INVALID_CONFIG;
         return;
     }
@@ -1564,16 +1531,19 @@ void do_get_process_id(process_name_t  process_name,
     return;
 }
 
+void do_unlock_preemption( lock_level_t* lock_level, return_code_t* return_code) {
 
-void do_get_process_status(process_id_t process_id,
-                    process_status_t    *process_status,
-                    return_code_t       *return_code) {
-    struct proc_struct *proc = find_proc(process_id);
-    if (proc == NULL) {
-        *return_code = INVALID_PARAM;
+    partition_t* part = current->part;
+    if ( part->status.operating_mode != NORMAL || part->status.lock_level == 0 ) {
+        *return_code = NO_ACTION;
         return;
     }
-    *process_status = proc->status;
+    part->status.lock_level = part->status.lock_level - 1;
+    if ( part->status.lock_level == 0 ) {
+        *lock_level = 0;
+        schedule();
+    }
+    *lock_level = part->status.lock_level;
     *return_code = NO_ERROR;
-    return;
 }
+

@@ -16,7 +16,7 @@ typedef event_state_type    event_state_t;
 
 typedef struct event_status_type {
     event_state_t   event_state;
-    apex_integer_t  writing_processes;
+    apex_integer_t  waiting_processes;
 } event_status_type;
 
 typedef event_status_type event_status_t;

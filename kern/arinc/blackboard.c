@@ -145,223 +145,185 @@ static blackboard_t *get_blackboard_by_name(blackboard_name_t name) {
 }
 
 
-void do_create_blackboard(
-    blackboard_name_t   blackboard_name,
-    message_size_t      max_message_size,
-    blackboard_id_t     *blackboard_id,
-    return_code_t       *return_code)
-{
-    blackboard_t *blackboard;
+void do_get_blackboard_id( blackboard_name_t blackboard_name, blackboard_id_t* blackboard_id, return_code_t* return_code) {
 
-    if (current->part->blackboard_num >= MAX_NUMBER_OF_BLACKBOARDS) {
-        *return_code = INVALID_CONFIG;
-        return;
-    }
-
-    blackboard = get_blackboard_by_name(blackboard_name);
-    if (blackboard != NULL) {
-        *return_code = NO_ACTION;
-        return;
-    }
-
-    if (max_message_size <= 0) {
+    blackboard_t* bboard = get_blackboard_by_name(blackboard_name);
+    if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
+    *blackboard_id = bboard->id;
+    *return_code = NO_ERROR;
+}
 
-    if (current->part->status.operating_mode == NORMAL) {
-        *return_code = INVALID_MODE;
-        return;
-    }
+void do_create_blackboard( blackboard_name_t blackboard_name, message_size_t max_message_size, blackboard_id_t* blackboard_id, return_code_t* return_code) {
 
-    blackboard = alloc_blackboard(max_message_size);
-    if (blackboard == NULL) {
+    partition_t* part = current->part;
+    if ( part->blackboard_num >= MAX_NUMBER_OF_BLACKBOARDS ) {
         *return_code = INVALID_CONFIG;
         return;
     }
-
+    blackboard_t* blackboard = get_blackboard_by_name(blackboard_name);
+    if ( blackboard != NULL ) {
+        *return_code = NO_ACTION;
+        return;
+    }
+    if ( max_message_size <= 0 ) {
+        *return_code = INVALID_PARAM;
+        return;
+    }
+    if ( part->status.operating_mode == NORMAL ) {
+        *return_code = INVALID_MODE;
+        return;
+    }
+    blackboard = alloc_blackboard(max_message_size);
+    if ( blackboard == NULL ) {
+        *return_code = INVALID_CONFIG;
+        return;
+    }
     blackboard->status.max_message_size = max_message_size;
     blackboard->status.waiting_processes = 0;
     strcpy(blackboard->name, blackboard_name);
-    current->part->blackboard_num++;
-
+    // add_blackboard
+    list_add_after(&part->all_blackboard, &blackboard->bb_link);
+    part->blackboard_num = part->blackboard_num + 1;
     *blackboard_id = blackboard->id;
     *return_code = NO_ERROR;
 }
 
-void do_display_blackboard(
-    blackboard_id_t blackboard_id,
-    message_addr_t  message_addr,
-    message_size_t  length,
-    return_code_t   *return_code)
-{
-    blackboard_t *board;
-    if ((board = get_blackboard_by_id(blackboard_id)) == NULL) {
+void do_display_blackboard( blackboard_id_t blackboard_id, message_addr_t message_addr, message_size_t len, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
+    struct proc_struct* proc = current;
+    if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    if (length > board->status.max_message_size) {
+    if ( len > bboard->status.max_message_size ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    if (length <= 0) {
+    if ( len <= 0 ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    board->status.empty_indicator = OCCUPIED;
-    memcpy(board->buff, message_addr, length);
-    board->length = length;
-
-    struct proc_struct *proc;
-    list_entry_t *le;
-    if (!list_empty(&board->waiting_thread)) {
-        le = board->waiting_thread.next;
-
-        while (le != &board->waiting_thread) {
-            proc = le2proc(le, run_link);
-            if (proc->timer != NULL && test_wt_flag(proc, WT_TIMER)) {
-                clear_wt_flag(proc, WT_TIMER);
-                del_timer(proc->timer);
-            }
-            le = list_next(le);
-            list_del_init(&proc->run_link);
-
+    bboard->status.empty_indicator = OCCUPIED;
+    memcpy(bboard->buff, message_addr, len);
+    bboard->length = len;
+    // stop_all_timer
+    list_entry_t *stle = bboard->waiting_thread.next;
+    while ( stle != &bboard->waiting_thread ) {
+        proc = le2proc(stle, run_link);
+        if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_TIMER) ) {
+            clear_wt_flag(proc, WT_TIMER);
+            timer_t* timer = proc->timer;
+            del_timer(timer);
+            kfree(timer);
+        }
+        stle = list_next(stle);
+    }
+    // wakeup_waiting_proc
+    list_entry_t *wwle = bboard->waiting_thread.next;
+    while ( wwle != &bboard->waiting_thread ) {
+        proc = le2proc(wwle, run_link);
+        if ( proc->status.process_state == WAITING && test_wt_flag(proc, WT_BBOARD) ) {
             clear_wt_flag(proc, WT_BBOARD);
-            wakeup_proc(proc);
-            board->status.waiting_processes--;
+            list_del(&proc->run_link);
+            if ( proc->wait_state == 0 ) {
+                wakeup_proc(proc);
+            }
         }
-
-        if (PREEMPTION) {
-            schedule();
-        }
+        wwle = list_next(wwle);
     }
-
+    bboard->status.waiting_processes = 0;
+    if ( PREEMPTION != 0 ) {
+        schedule();
+    }
     *return_code = NO_ERROR;
 }
 
-void do_read_blackboard(
-    blackboard_id_t blackboard_id,
-    system_time_t   time_out,
-    message_addr_t  message_addr,
-    message_size_t  *length,
-    return_code_t   *return_code)
-{
-     blackboard_t *board;
-    if ((board = get_blackboard_by_id(blackboard_id)) == NULL) {
+void do_read_blackboard( blackboard_id_t blackboard_id, system_time_t time_out, message_addr_t message_addr, message_size_t* len, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
+    struct proc_struct* proc = current;
+    if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    if (time_out > MAX_TIME_OUT) {
+    if ( time_out > MAX_TIME_OUT ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    if (board->status.empty_indicator == OCCUPIED) {
-        memcpy(message_addr, board->buff, board->length);
-        
-        *length = board->length;
-        *return_code = NO_ERROR; 
+    if ( bboard->status.empty_indicator == OCCUPIED ) {
+        memcpy(message_addr, bboard->buff, bboard->length);
+        *len = bboard->length;
+        *return_code = NO_ERROR;
     }
-    else if (time_out == 0) {
-        *length = 0;
+    else if ( time_out == 0) {
+        *len = 0;
         *return_code = NOT_AVAILABLE;
     }
-    else if (!PREEMPTION) {
-        *length = 0;
+    else if ( PREEMPTION == 0) {
+        *len = 0;
         *return_code = INVALID_MODE;
     }
-
-    else if (time_out == INFINITE_TIME_VALUE) {
-        current->status.process_state = WAITING;
-        list_del_init(&current->run_link);
-        list_add_before(&board->waiting_thread, &current->run_link);
-        set_wt_flag(current, WT_BBOARD);
-        board->status.waiting_processes++;
-
+    else if ( time_out == INFINITE_TIME_VALUE) {
+        // set_proc_waiting
+        proc->status.process_state = WAITING;
+        list_del_init(&proc->run_link);
+        set_wt_flag(proc, WT_BBOARD);
+        list_add_before(&bboard->waiting_thread, &proc->run_link);
+        bboard->status.waiting_processes = bboard->status.waiting_processes + 1;
         schedule();
-
-        memcpy(message_addr, board->buff, board->length);
-        
-        *length = board->length;
+        memcpy(message_addr, bboard->buff, bboard->length);
+        *len = bboard->length;
         *return_code = NO_ERROR;
     }
     else {
-        current->status.process_state = WAITING;
-        list_del_init(&current->run_link);
-        list_add_before(&board->waiting_thread, &current->run_link);
-        set_wt_flag(current, WT_BBOARD);
-        board->status.waiting_processes++;
-
+        // set_proc_waiting
+        proc->status.process_state = WAITING;
+        list_del_init(&proc->run_link);
+        set_wt_flag(proc, WT_BBOARD);
+        list_add_before(&bboard->waiting_thread, &proc->run_link);
+        // add_timer
         timer_t *timer = kmalloc(sizeof(timer_t));
-        timer_init(timer, current, time_out);
+        timer_init(timer, proc, time_out);
+        set_wt_flag(proc, WT_TIMER);
         add_timer(timer);
-        current->timer = timer;
-        set_wt_flag(current, WT_TIMER);
-        board->status.waiting_processes++;
-
+        proc->timer = timer;
+        bboard->status.waiting_processes = bboard->status.waiting_processes + 1;
         schedule();
-
-        kfree(timer);
-        if (current->timer == NULL) {
-            *length = 0;
+        if ( proc->timer == NULL ) {
+            *len = 0;
             *return_code = TIMED_OUT;
         }
         else {
-            memcpy(message_addr, board->buff, board->length);
-        
-            *length = board->length;
+            proc->timer = NULL;
+            memcpy(message_addr, bboard->buff, bboard->length);
+            *len = bboard->length;
             *return_code = NO_ERROR;
         }
-
     }
-
 }
 
-void do_clear_blackboard(
-    blackboard_id_t blackboard_id,
-    return_code_t   *return_code)
-{
-    blackboard_t *board;
-    if ((board = get_blackboard_by_id(blackboard_id)) == NULL) {
+void do_clear_blackboard( blackboard_id_t blackboard_id, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
+    if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    board->status.empty_indicator = EMPTY;
-
+    bboard->status.empty_indicator = EMPTY;
     *return_code = NO_ERROR;
 }
 
-void do_get_blackboard_id(
-    blackboard_name_t   blackboard_name,
-    blackboard_id_t     *blackboard_id,
-    return_code_t       *return_code)
-{
-    blackboard_t *board;
-    if ((board = get_blackboard_by_name(blackboard_name)) == NULL) {
+void do_get_blackboard_status( blackboard_id_t blackboard_id, blackboard_status_t* blackboard_status, return_code_t* return_code) {
+
+    blackboard_t* bboard = get_blackboard_by_id(blackboard_id);
+    if ( bboard == NULL ) {
         *return_code = INVALID_PARAM;
         return;
     }
-
-    *blackboard_id = board->id;
+    *blackboard_status = bboard->status;
     *return_code = NO_ERROR;
-}
-
-void do_get_blackboard_status(
-    blackboard_id_t     blackboard_id,
-    blackboard_status_t *blackboard_status,
-    return_code_t       *return_code)
-{
-    blackboard_t *board;
-    if ((board = get_blackboard_by_id(blackboard_id)) == NULL) {
-        *return_code = INVALID_PARAM;
-        return;
-    }
-
-    *blackboard_status = board->status;
-    *return_code = NO_ERROR; 
 }

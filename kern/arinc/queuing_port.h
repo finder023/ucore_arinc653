@@ -32,7 +32,7 @@ typedef struct queuing_port_type {
     queuing_discipline_t    discipline;
     list_entry_t            list_link;
     list_entry_t            msg_set;
-    list_entry_t            waitting_thread;
+    list_entry_t            waiting_thread;
 } queuing_port_t;
 
 #define le2queue(le, member)    (to_struct(le, queuing_port_t, member))

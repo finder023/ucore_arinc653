@@ -84,10 +84,10 @@ void do_create_process(process_attribute_t *attributes,
                     return_code_t *return_code);
 
 void do_set_priority(process_id_t process_id,
-                    uint8_t priority,
+                    priority_t priority,
                     return_code_t *return_code);
 
-void do_suspend_self(uint32_t time_out,
+void do_suspend_self(system_time_t time_out,
                     return_code_t *return_code);
             
 void do_suspend(process_id_t process_id, return_code_t *return_code);
