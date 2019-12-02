@@ -9,8 +9,6 @@
 #include <intr.h>
 #include <pmm.h>
 #include <vmm.h>
-#include <ide.h>
-#include <swap.h>
 #include <proc.h>
 #include <partition.h>
 #include <sampling_port.h>
@@ -45,9 +43,6 @@ kern_init(void) {
 
     sampling_port_init();
     queuing_port_init();
-    
-    ide_init();                 // init ide devices
-    swap_init();                // init swap
 
     clock_init();               // init clock interrupt
     intr_enable();              // enable irq interrupt

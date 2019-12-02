@@ -8,7 +8,6 @@
 #include <assert.h>
 #include <console.h>
 #include <vmm.h>
-#include <swap.h>
 #include <kdebug.h>
 #include <unistd.h>
 #include <syscall.h>

@@ -6,7 +6,6 @@
 #include <error.h>
 #include <pmm.h>
 #include <x86.h>
-#include <swap.h>
 #include <kmalloc.h>
 
 /* 
@@ -90,8 +89,8 @@ mm_create(void) {
         mm->pgdir = NULL;
         mm->map_count = 0;
 
-        if (swap_init_ok) swap_init_mm(mm);
-        else mm->sm_priv = NULL;
+//        if (swap_init_ok) swap_init_mm(mm);
+//        else mm->sm_priv = NULL;
         
         set_mm_count(mm, 0);
         sem_init(&(mm->mm_sem), 1);
@@ -562,21 +561,21 @@ do_pgfault(struct mm_struct *mm, uint32_t error_code, uintptr_t addr) {
         } else{
            // if this pte is a swap entry, then load data from disk to a page with phy addr
            // and call page_insert to map the phy addr with logical addr
-           if(swap_init_ok) {               
-               if ((ret = swap_in(mm, addr, &page)) != 0) {
-                   cprintf("swap_in in do_pgfault failed\n");
-                   goto failed;
-               }    
-
-           }  
-           else {
-            cprintf("no swap_init_ok but ptep is %x, failed\n",*ptep);
-            goto failed;
-           }
+//           if(swap_init_ok) {               
+//               if ((ret = swap_in(mm, addr, &page)) != 0) {
+//                   cprintf("swap_in in do_pgfault failed\n");
+//                   goto failed;
+//               }    
+//
+//           }  
+//           else {
+//            cprintf("no swap_init_ok but ptep is %x, failed\n",*ptep);
+//            goto failed;
+//           }
        } 
-       page_insert(mm->pgdir, page, addr, perm);
-       swap_map_swappable(mm, addr, page, 1);
-       page->pra_vaddr = addr;
+//       page_insert(mm->pgdir, page, addr, perm);
+//       swap_map_swappable(mm, addr, page, 1);
+//       page->pra_vaddr = addr;
    }
    ret = 0;
 failed:

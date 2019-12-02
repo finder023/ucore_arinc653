@@ -146,30 +146,20 @@ $(foreach p,$(call read_packet,uprog),$(eval $(call uprog_ld,$(p))))
 # -------------------------------------------------------------------
 # kernel
 
-KINCLUDE	+= kern/debug/ \
-			   kern/driver/ \
-			   kern/trap/ \
-			   kern/mm/ \
-			   kern/libs/ \
-			   kern/sync/ \
-			   kern/fs/    \
-			   kern/process \
-			   kern/schedule \
-			   kern/syscall	\
-			   kern/arinc
+KINCLUDE	+= kernel/include/debug/ \
+			   kernel/include/driver/ \
+			   kernel/include/mm/ \
+			   kernel/include/libs/ \
+			   kernel/include/sync/ \
+			   kernel/include \
+			   kernel/include/arinc
 
-KSRCDIR		+= kern/init \
-			   kern/libs \
-			   kern/debug \
-			   kern/driver \
-			   kern/trap \
-			   kern/mm \
-			   kern/sync \
-			   kern/fs    \
-			   kern/process \
-			   kern/schedule \
-			   kern/syscall \
-			   kern/arinc
+KSRCDIR		+= kernel/init \
+			   kernel/libs \
+			   kernel/debug \
+			   kernel/driver \
+			   kernel/arinc \
+			   kernel/
 
 KCFLAGS		+= $(addprefix -I,$(KINCLUDE))
 
@@ -299,7 +289,7 @@ GRADE_GDB_IN	:= .gdb.in
 GRADE_QEMU_OUT	:= .qemu.out
 HANDIN			:= lab$(PROJ)-handin.tar.gz
 
-TOUCH_FILES		:= kern/process/proc.c
+TOUCH_FILES		:= kernel/process/proc.c
 
 MAKEOPTS		:= --quiet --no-print-directory
 
