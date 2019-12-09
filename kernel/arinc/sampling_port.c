@@ -43,6 +43,7 @@ static sampling_port_t* alloc_sampling_port(size_t max_size) {
     memset(sample->name, 0, sizeof(sample->name));
     memset(&sample->status, 0, sizeof(sampling_port_status_t));
     sample->buff = kmalloc(max_size);
+    sample->length = 0;
     list_add_after(&all_sampling_port, &sample->list_link);
     nr_sampling_port++;
 
@@ -161,6 +162,11 @@ void do_create_sampling_port( sampling_port_name_t name, message_size_t max_msg_
         return;
     }
     sampling_port_t* sample = get_sample_by_name(name);
+    if (sample != NULL) {
+        *sampling_port_id = sample->id;
+        *return_code = NO_ERROR;
+        return;
+    }
     partition_t* part = current->part;
     if ( max_msg_size <= 0 ) {
         *return_code = INVALID_CONFIG;
@@ -186,6 +192,7 @@ void do_create_sampling_port( sampling_port_name_t name, message_size_t max_msg_
     sample->status.max_message_size = max_msg_size;
     sample->status.port_direction = port_direction;
     sample->status.refresh_period = refresh_period;
+    *sampling_port_id = sample->id;
     strcpy(sample->name, name);
     *return_code = NO_ERROR;
 }
@@ -212,6 +219,7 @@ void do_read_sampling_message( sampling_port_id_t sampling_port_id, message_addr
         *len = 0;
         *validity = INVALID;
         *return_code = NO_ACTION;
+        return;
     }
     else {
         memcpy(msg_addr, sample->buff, sample->length);

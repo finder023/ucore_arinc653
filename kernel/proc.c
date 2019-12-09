@@ -926,34 +926,13 @@ user_main(void *arg) {
     PARTITION_EXEC(5)
 
 
-DEF_1_PARTITION
+DEF_2_PARTITION
 
 static int
 init_main(void *arg) {
-//    size_t nr_free_pages_store = nr_free_pages();
-//    size_t kernel_allocated_store = kallocated();
-
-//    int pid = kernel_thread(partition_0, NULL, 0);
-//    if (pid <= 0) {
-//        panic("create user_main failed.\n");
-//    }
-
-    EXEC_1_PARTITION;
- // extern void check_sync(void);
-    // check_sync();                // check philosopher sync problem
-
-//    while (do_wait(0, NULL) == 0) {
-//        schedule();
-//    }
-
-//    cprintf("all user-mode processes have quit.\n");
-//    assert(initproc->cptr == NULL && initproc->yptr == NULL && initproc->optr == NULL);
-//    assert(nr_process == 2);
-//    assert(list_next(&proc_list) == &(initproc->list_link));
-//    assert(list_prev(&proc_list) == &(initproc->list_link));
-//    assert(nr_free_pages_store == nr_free_pages());
-//    assert(kernel_allocated_store == kallocated());
-//    cprintf("init check memory pass.\n");
+    
+    EXEC_2_PARTITION;
+    
     partition_t *part = current->part;
     part->scheduling = 0;
     part->first_run = 1;
@@ -1095,7 +1074,7 @@ do_mmap(uintptr_t *addr_store, size_t len, uint32_t mmap_flags) {
     if ((ret = mm_map(mm, addr, len, vm_flags, NULL)) == 0) {
         *addr_store = addr;
     }
-    cprintf("do_mmap mm_map pass.\n");
+    // cprintf("do_mmap mm_map pass.\n");
 
 out_unlock:
     unlock_mm(mm);
@@ -1326,6 +1305,7 @@ void do_create_process( process_attribute_t* attr, process_id_t* pid, return_cod
     init_proc_context(proc);
     set_proc_link(proc);
     set_mm(proc);
+    strcpy(proc->name, attr->name);
     proc->status.process_state = DORMANT;
     *pid = proc->pid;
     *return_code = NO_ERROR;

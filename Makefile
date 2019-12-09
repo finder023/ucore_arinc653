@@ -43,7 +43,7 @@ endif
 # define compiler and flags
 
 HOSTCC		:= gcc
-HOSTCFLAGS	:= -g -Wall -O2
+HOSTCFLAGS	:= -g -Wall 
 
 GDB		:= $(GCCPREFIX)gdb
 
